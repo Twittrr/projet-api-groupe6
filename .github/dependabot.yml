@@ -1,0 +1,45 @@
+version: 2
+updates:
+  # --- npm : chaque service + frontend ---
+  - package-ecosystem: npm
+    directory: /services/auth
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 5
+  - package-ecosystem: npm
+    directory: /services/users
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 5
+  - package-ecosystem: npm
+    directory: /services/posts
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 5
+  - package-ecosystem: npm
+    directory: /services/notifications
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 5
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 5
+
+  # --- Docker : images de base des services ---
+  - package-ecosystem: docker
+    directory: /services/auth
+    schedule: { interval: weekly }
+  - package-ecosystem: docker
+    directory: /services/users
+    schedule: { interval: weekly }
+  - package-ecosystem: docker
+    directory: /services/posts
+    schedule: { interval: weekly }
+  - package-ecosystem: docker
+    directory: /services/notifications
+    schedule: { interval: weekly }
+  - package-ecosystem: docker
+    directory: /frontend
+    schedule: { interval: weekly }
+
+  # --- GitHub Actions ---
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly }

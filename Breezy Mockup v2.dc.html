@@ -1,0 +1,1266 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<style>
+*{box-sizing:border-box;-webkit-font-smoothing:antialiased}
+body{margin:0;font-family:'Inter',system-ui,sans-serif;background:#E5E1D4}
+.no-scrollbar::-webkit-scrollbar{display:none}
+.no-scrollbar{scrollbar-width:none}
+.serif{font-family:'Instrument Serif',Georgia,serif}
+.grain{background-image:radial-gradient(rgba(0,0,0,0.025) 1px,transparent 1px),radial-gradient(rgba(0,0,0,0.018) 1px,transparent 1px);background-size:3px 3px,7px 7px;background-position:0 0,1px 2px}
+
+:root{
+  --c-bg:#FBFAF6;--c-sf:#F4F2EB;--c-sf2:#ECEADE;
+  --c-bd:rgba(17,17,16,0.07);--c-bd2:rgba(17,17,16,0.13);
+  --c-tx:#111110;--c-tx2:rgba(17,17,16,0.68);--c-tx3:rgba(17,17,16,0.42);--c-tx4:rgba(17,17,16,0.26);
+  --c-ac:#2563EB;--c-ac2:rgba(37,99,235,0.1);--c-acd:#1E40AF;
+  --c-nav:#111110;--c-ok:#3E7C5A;--c-err:#DC2626;
+  --c-in:rgba(17,17,16,0.055);--c-tag:rgba(17,17,16,0.07);
+  --c-gl:rgba(251,250,246,0.90);
+  --av1:#2563EB;--av2:#3E7C5A;--av3:#7C3AED;--av4:#B45309;--av5:#0F766E
+}
+[data-theme="dark"]{
+  --c-bg:#1A1714;--c-sf:#242220;--c-sf2:#2D2A26;
+  --c-bd:rgba(240,237,230,0.08);--c-bd2:rgba(240,237,230,0.14);
+  --c-tx:#F0EDE6;--c-tx2:rgba(240,237,230,0.68);--c-tx3:rgba(240,237,230,0.42);--c-tx4:rgba(240,237,230,0.24);
+  --c-ac:#4B87F5;--c-ac2:rgba(75,135,245,0.12);--c-acd:#7BA8F8;
+  --c-nav:#0D0B09;--c-ok:#4ADE80;--c-err:#F87171;
+  --c-in:rgba(240,237,230,0.07);--c-tag:rgba(240,237,230,0.09);
+  --c-gl:rgba(26,23,20,0.90);
+  --av1:#4B87F5;--av2:#4ADE80;--av3:#A78BFA;--av4:#FCD34D;--av5:#2DD4BF
+}
+[data-theme] *{transition:background-color .22s,color .18s,border-color .18s,fill .18s,stroke .18s,box-shadow .18s}
+
+@keyframes sin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes hpop{0%{transform:scale(1)}35%{transform:scale(1.5)}70%{transform:scale(.88)}100%{transform:scale(1)}}
+@keyframes su{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes stbar{from{width:0}to{width:100%}}
+
+.sin{animation:sin .22s cubic-bezier(.34,1.2,.64,1) both}
+.hpop{animation:hpop .35s ease both}
+.su{animation:su .28s ease both}
+.masonry{column-count:2;column-gap:6px}
+.masonry-item{break-inside:avoid;margin-bottom:6px}
+
+@media(max-width:640px){
+  .pframe{border-radius:0!important;box-shadow:none!important;height:100vh!important;width:100vw!important}
+  .dwrap{padding:0!important}
+  .donly{display:none!important}
+}
+</style>
+</helmet>
+
+<div data-theme="{{ themeAttr }}" style="min-height:100vh;font-family:'Inter',system-ui,sans-serif">
+<div class="dwrap" style="min-height:100vh;display:flex;flex-direction:row;align-items:flex-start;justify-content:center;gap:36px;padding:32px 40px;flex-wrap:wrap">
+
+<!-- LEFT SIDEBAR -->
+<aside class="donly" style="width:240px;padding-top:28px;flex-shrink:0">
+  <div style="display:flex;align-items:center;gap:10px">
+    <div style="width:38px;height:38px;border-radius:13px;background:var(--c-tx);display:flex;align-items:center;justify-content:center">
+      <span class="serif" style="font-size:21px;color:var(--c-bg)">d</span>
+    </div>
+    <div>
+      <div class="serif" style="font-size:26px;line-height:1;color:var(--c-tx)">dad.</div>
+      <div style="font-size:10px;color:var(--c-tx3);margin-top:1px">breezy · v0.2</div>
+    </div>
+  </div>
+  <p class="serif" style="font-size:20px;line-height:1.35;margin-top:24px;color:var(--c-tx)">Un journal social, <em>plus lent</em>, plus soigné.</p>
+  <p style="font-size:12px;color:var(--c-tx2);margin-top:10px;line-height:1.65">Maquette v2 — saphir + mode sombre chaud. Tous les écrans ci-dessous.</p>
+
+  <div style="margin-top:20px;display:flex;flex-direction:column;gap:4px">
+    <button onClick="{{ go.feed }}" style="text-align:left;padding:8px 12px;border-radius:11px;background:var(--c-sf);border:none;font-size:12px;color:var(--c-tx2);cursor:pointer;font-family:inherit">🏠 Feed</button>
+    <button onClick="{{ go.search }}" style="text-align:left;padding:8px 12px;border-radius:11px;background:var(--c-sf);border:none;font-size:12px;color:var(--c-tx2);cursor:pointer;font-family:inherit">🧭 Explorer (masonry)</button>
+    <button onClick="{{ go.notifs }}" style="text-align:left;padding:8px 12px;border-radius:11px;background:var(--c-sf);border:none;font-size:12px;color:var(--c-tx2);cursor:pointer;font-family:inherit">🔔 Notifications</button>
+    <button onClick="{{ go.settings }}" style="text-align:left;padding:8px 12px;border-radius:11px;background:var(--c-sf);border:none;font-size:12px;color:var(--c-tx2);cursor:pointer;font-family:inherit">⚙️ Réglages + dark mode</button>
+    <button onClick="{{ go.story }}" style="text-align:left;padding:8px 12px;border-radius:11px;background:var(--c-sf);border:none;font-size:12px;color:var(--c-tx2);cursor:pointer;font-family:inherit">▶ Story player</button>
+    <button onClick="{{ go.moderation }}" style="text-align:left;padding:8px 12px;border-radius:11px;background:var(--c-sf);border:none;font-size:12px;color:var(--c-tx2);cursor:pointer;font-family:inherit">🛡️ Modération (admin)</button>
+    <button onClick="{{ go.report }}" style="text-align:left;padding:8px 12px;border-radius:11px;background:var(--c-sf);border:none;font-size:12px;color:var(--c-tx2);cursor:pointer;font-family:inherit">🚩 Signalement</button>
+  </div>
+
+  <div style="margin-top:20px;padding:16px;border-radius:20px;background:var(--c-sf);border:1px solid var(--c-bd)">
+    <div style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--c-tx3)">Palette v2</div>
+    <div style="display:flex;gap:7px;margin-top:10px">
+      <div style="width:30px;height:30px;border-radius:9px;background:var(--c-bg);border:1px solid var(--c-bd2)" title="bg"></div>
+      <div style="width:30px;height:30px;border-radius:9px;background:var(--c-sf)" title="surface"></div>
+      <div style="width:30px;height:30px;border-radius:9px;background:var(--c-tx)" title="text"></div>
+      <div style="width:30px;height:30px;border-radius:9px;background:var(--c-ac)" title="saphir"></div>
+      <div style="width:30px;height:30px;border-radius:9px;background:var(--c-ok)" title="success"></div>
+    </div>
+    <ul style="font-size:11px;color:var(--c-tx2);margin-top:10px;padding-left:14px;line-height:1.9">
+      <li>Saphir #2563EB / #4B87F5</li>
+      <li>Dark brun #1A1714</li>
+      <li>Instrument Serif + Inter</li>
+    </ul>
+  </div>
+</aside>
+
+<!-- PHONE -->
+<div class="pframe" style="width:390px;height:844px;border-radius:44px;background:var(--c-bg);overflow:hidden;position:relative;box-shadow:0 32px 80px -20px rgba(17,17,16,0.4),0 8px 28px -8px rgba(17,17,16,0.22);flex-shrink:0">
+
+  <!-- Notch -->
+  <div class="donly" style="position:absolute;top:0;left:50%;transform:translateX(-50%);width:128px;height:28px;background:#000;border-radius:0 0 18px 18px;z-index:50"></div>
+
+  <!-- Status bar -->
+  <div style="position:absolute;top:0;left:0;right:0;height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;font-size:11px;font-weight:600;color:var(--c-tx);z-index:40;pointer-events:none">
+    <span>9:41</span>
+    <span style="display:flex;align-items:center;gap:4px">
+      <i data-lucide="signal" style="width:13px;height:13px"></i>
+      <i data-lucide="wifi" style="width:13px;height:13px"></i>
+      <i data-lucide="battery-full" style="width:16px;height:16px"></i>
+    </span>
+  </div>
+
+  <!-- SCREENS -->
+  <div style="width:100%;height:100%;padding-top:44px;position:relative">
+
+    <!-- ══ ONBOARDING ══ -->
+    <sc-if value="{{ si.onboarding }}" hint-placeholder-val="{{ true }}">
+      <section class="grain sin" style="display:flex;flex-direction:column;width:100%;height:100%;background:var(--c-bg)">
+        <div style="flex:1;display:flex;flex-direction:column;justify-content:space-between;padding:28px">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div style="display:flex;align-items:center;gap:9px">
+              <div style="width:32px;height:32px;border-radius:11px;background:var(--c-tx);display:flex;align-items:center;justify-content:center">
+                <span class="serif" style="font-size:17px;color:var(--c-bg)">d</span>
+              </div>
+              <span class="serif" style="font-size:23px;color:var(--c-tx)">dad.</span>
+            </div>
+            <button onClick="{{ go.feed }}" style="font-size:12px;color:var(--c-tx3);background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px;font-family:inherit">passer</button>
+          </div>
+
+          <div>
+            <h1 class="serif" style="font-size:58px;line-height:.92;letter-spacing:-.02em;color:var(--c-tx);margin:0">Écris<br/>moins.<br/><em style="color:var(--c-ac)">Pense</em><br/>mieux.</h1>
+            <p style="font-size:15px;line-height:1.65;color:var(--c-tx2);margin:20px 0 0">Un fil pour partager une idée, une image, un instant — sans la course aux likes.</p>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <button onClick="{{ go.signup }}" style="width:100%;height:52px;border-radius:20px;background:var(--c-tx);color:var(--c-bg);font-size:14px;font-weight:600;border:none;cursor:pointer;font-family:inherit">Créer un compte</button>
+            <button onClick="{{ go.login }}" style="width:100%;height:52px;border-radius:20px;background:transparent;color:var(--c-tx);font-size:14px;font-weight:600;border:1px solid var(--c-bd2);cursor:pointer;font-family:inherit">J'ai déjà un compte</button>
+            <p style="text-align:center;font-size:11px;color:var(--c-tx4);margin:4px 0 0">En continuant, vous acceptez les <u>CGU</u> et la <u>confidentialité</u>.</p>
+          </div>
+        </div>
+      </section>
+    </sc-if>
+
+    <!-- ══ LOGIN ══ -->
+    <sc-if value="{{ si.login }}" hint-placeholder-val="{{ false }}">
+      <section class="sin" style="display:flex;flex-direction:column;width:100%;height:100%;background:var(--c-bg)">
+        <header style="padding:12px 20px 8px;display:flex;align-items:center;justify-content:space-between">
+          <button onClick="{{ go.onboarding }}" style="width:36px;height:36px;border-radius:100px;background:var(--c-sf);display:flex;align-items:center;justify-content:center;border:none;cursor:pointer">
+            <i data-lucide="arrow-left" style="width:16px;height:16px"></i>
+          </button>
+          <span style="font-size:11px;color:var(--c-tx3)">démo · auth bypass</span>
+        </header>
+        <div class="no-scrollbar" style="flex:1;padding:8px 28px 24px;overflow-y:auto">
+          <h2 class="serif" style="font-size:38px;line-height:1.1;color:var(--c-tx);margin:0">Bon retour.</h2>
+          <p style="font-size:13px;color:var(--c-tx2);margin:4px 0 0">Connectez‑vous avec votre identifiant.</p>
+          <div style="margin-top:28px;display:flex;flex-direction:column;gap:16px">
+            <label style="display:block">
+              <span style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--c-tx3)">Identifiant</span>
+              <input placeholder="@vous" style="margin-top:6px;width:100%;height:50px;padding:0 16px;border-radius:18px;background:var(--c-in);border:1px solid var(--c-bd);font-size:14px;color:var(--c-tx);outline:none;font-family:inherit"/>
+            </label>
+            <label style="display:block">
+              <span style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--c-tx3)">Mot de passe</span>
+              <input type="password" placeholder="••••••••" style="margin-top:6px;width:100%;height:50px;padding:0 16px;border-radius:18px;background:var(--c-in);border:1px solid var(--c-bd);font-size:14px;color:var(--c-tx);outline:none;font-family:inherit"/>
+            </label>
+            <div style="display:flex;align-items:center;justify-content:space-between;font-size:12px">
+              <label style="display:flex;align-items:center;gap:7px;color:var(--c-tx2);cursor:pointer"><input type="checkbox" style="accent-color:var(--c-tx)"/>Se souvenir</label>
+              <a style="color:var(--c-ac);font-weight:500;cursor:pointer">Oublié ?</a>
+            </div>
+            <button onClick="{{ go.feed }}" style="width:100%;height:52px;border-radius:20px;background:var(--c-tx);color:var(--c-bg);font-size:14px;font-weight:600;border:none;cursor:pointer;font-family:inherit">Se connecter</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;margin:22px 0;font-size:11px;color:var(--c-tx3)">
+            <div style="flex:1;height:1px;background:var(--c-bd2)"></div>OU<div style="flex:1;height:1px;background:var(--c-bd2)"></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <button onClick="{{ go.feed }}" style="height:50px;border-radius:18px;border:1px solid var(--c-bd2);background:transparent;display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;font-weight:500;color:var(--c-tx);cursor:pointer;font-family:inherit">
+              <i data-lucide="apple" style="width:16px;height:16px"></i>Apple
+            </button>
+            <button onClick="{{ go.feed }}" style="height:50px;border-radius:18px;border:1px solid var(--c-bd2);background:transparent;display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;font-weight:500;color:var(--c-tx);cursor:pointer;font-family:inherit">
+              <i data-lucide="chrome" style="width:16px;height:16px"></i>Google
+            </button>
+          </div>
+          <p style="text-align:center;font-size:12px;color:var(--c-tx2);margin-top:24px">Pas de compte ? <button onClick="{{ go.signup }}" style="color:var(--c-tx);font-weight:700;background:none;border:none;cursor:pointer;font-size:12px;font-family:inherit">Créer</button></p>
+        </div>
+      </section>
+    </sc-if>
+
+    <!-- ══ SIGNUP ══ -->
+    <sc-if value="{{ si.signup }}" hint-placeholder-val="{{ false }}">
+      <section class="sin" style="display:flex;flex-direction:column;width:100%;height:100%;background:var(--c-bg)">
+        <header style="padding:12px 20px 8px;display:flex;align-items:center;justify-content:space-between">
+          <button onClick="{{ go.onboarding }}" style="width:36px;height:36px;border-radius:100px;background:var(--c-sf);display:flex;align-items:center;justify-content:center;border:none;cursor:pointer">
+            <i data-lucide="arrow-left" style="width:16px;height:16px"></i>
+          </button>
+          <span style="font-size:11px;color:var(--c-tx3)">étape 1 / 3</span>
+        </header>
+        <div class="no-scrollbar" style="flex:1;padding:8px 28px 24px;overflow-y:auto">
+          <h2 class="serif" style="font-size:38px;line-height:1.1;color:var(--c-tx);margin:0">Crée ton<br/>carnet.</h2>
+          <p style="font-size:13px;color:var(--c-tx2);margin:4px 0 0">Choisis un nom — tu pourras le changer.</p>
+          <div style="margin-top:18px;display:flex;align-items:center;gap:16px">
+            <div style="width:76px;height:76px;border-radius:22px;background:var(--c-sf);display:flex;align-items:center;justify-content:center">
+              <span class="serif" style="font-size:26px;color:var(--c-tx3)">aa</span>
+            </div>
+            <button style="font-size:13px;font-weight:600;color:var(--c-ac);background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px;font-family:inherit">Ajouter une photo</button>
+          </div>
+          <div style="margin-top:18px;display:flex;flex-direction:column;gap:14px">
+            <label style="display:block"><span style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--c-tx3)">Nom affiché</span><input placeholder="Ada L." style="margin-top:6px;width:100%;height:50px;padding:0 16px;border-radius:18px;background:var(--c-in);border:1px solid var(--c-bd);font-size:14px;color:var(--c-tx);outline:none;font-family:inherit"/></label>
+            <label style="display:block">
+              <span style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--c-tx3)">Identifiant</span>
+              <div style="margin-top:6px;height:50px;padding:0 16px;border-radius:18px;background:var(--c-in);border:1px solid var(--c-bd);display:flex;align-items:center;gap:4px">
+                <span style="color:var(--c-tx3);font-size:14px">@</span>
+                <input placeholder="ada" style="flex:1;background:transparent;border:none;font-size:14px;color:var(--c-tx);outline:none;font-family:inherit"/>
+                <i data-lucide="check" style="width:16px;height:16px;color:var(--c-ok)"></i>
+              </div>
+            </label>
+            <label style="display:block"><span style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--c-tx3)">Email</span><input placeholder="ada@dad.app" style="margin-top:6px;width:100%;height:50px;padding:0 16px;border-radius:18px;background:var(--c-in);border:1px solid var(--c-bd);font-size:14px;color:var(--c-tx);outline:none;font-family:inherit"/></label>
+            <label style="display:block"><span style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--c-tx3)">Mot de passe</span><input type="password" placeholder="••••••••" style="margin-top:6px;width:100%;height:50px;padding:0 16px;border-radius:18px;background:var(--c-in);border:1px solid var(--c-bd);font-size:14px;color:var(--c-tx);outline:none;font-family:inherit"/></label>
+          </div>
+          <div style="margin-top:20px">
+            <button onClick="{{ go.interests }}" style="width:100%;height:52px;border-radius:20px;background:var(--c-ac);color:#fff;font-size:14px;font-weight:600;border:none;cursor:pointer;font-family:inherit">Continuer →</button>
+            <p style="text-align:center;font-size:11px;color:var(--c-tx4);margin-top:10px">Démo — aucun champ n'est requis.</p>
+          </div>
+        </div>
+      </section>
+    </sc-if>
+
+    <!-- ══ INTERESTS ══ -->
+    <sc-if value="{{ si.interests }}" hint-placeholder-val="{{ false }}">
+      <section class="sin" style="display:flex;flex-direction:column;width:100%;height:100%;background:var(--c-bg)">
+        <header style="padding:12px 20px 8px;display:flex;align-items:center;justify-content:space-between">
+          <button onClick="{{ go.signup }}" style="width:36px;height:36px;border-radius:100px;background:var(--c-sf);display:flex;align-items:center;justify-content:center;border:none;cursor:pointer">
+            <i data-lucide="arrow-left" style="width:16px;height:16px"></i>
+          </button>
+          <div style="display:flex;align-items:center;gap:6px">
+            <div style="width:20px;height:4px;border-radius:2px;background:var(--c-bd2)"></div>
+            <div style="width:20px;height:4px;border-radius:2px;background:var(--c-ac)"></div>
+            <div style="width:20px;height:4px;border-radius:2px;background:var(--c-bd2)"></div>
+          </div>
+        </header>
+        <div class="no-scrollbar" style="flex:1;padding:8px 24px 120px;overflow-y:auto">
+          <h2 class="serif" style="font-size:38px;line-height:1.1;color:var(--c-tx);margin:0">Tes<br/>sujets.</h2>
+          <p style="font-size:13px;color:var(--c-tx2);margin:6px 0 0">Sélectionne au moins 3 — on personnalise ton fil.</p>
+          <div style="margin-top:22px;display:flex;flex-wrap:wrap;gap:9px">
+            <sc-for list="{{ chips }}" as="chip" hint-placeholder-count="8">
+              <button onClick="{{ chip.toggle }}" style="{{ chip.btnStyle }}">
+                <i data-lucide="{{ chip.ic }}" style="width:14px;height:14px"></i>
+                {{ chip.label }}
+              </button>
+            </sc-for>
+          </div>
+        </div>
+        <div style="position:absolute;bottom:0;left:0;right:0;padding:16px 24px;background:var(--c-gl);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-top:1px solid var(--c-bd)">
+          <button onClick="{{ go.feed }}" style="{{ ctaStyle }}">{{ ctaLabel }}</button>
+        </div>
+      </section>
+    </sc-if>
+
+    <!-- ══ FEED ══ -->
+    <sc-if value="{{ si.feed }}" hint-placeholder-val="{{ false }}">
+      <section class="sin" style="display:flex;flex-direction:column;width:100%;height:100%;background:var(--c-bg)">
+        <header style="padding:12px 20px 10px;display:flex;align-items:center;justify-content:space-between;background:var(--c-gl);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--c-bd);flex-shrink:0">
+          <div style="display:flex;align-items:center;gap:9px">
+            <div style="width:30px;height:30px;border-radius:10px;background:var(--c-tx);display:flex;align-items:center;justify-content:center">
+              <span class="serif" style="font-size:16px;color:var(--c-bg)">d</span>
+            </div>
+            <span class="serif" style="font-size:23px;color:var(--c-tx)">dad.</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <button onClick="{{ go.search }}" style="width:36px;height:36px;border-radius:100px;background:var(--c-sf);display:flex;align-items:center;justify-content:center;border:none;cursor:pointer">
+              <i data-lucide="search" style="width:15px;height:15px"></i>
+            </button>
+            <button onClick="{{ go.messages }}" style="width:36px;height:36px;border-radius:100px;background:var(--c-sf);display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;position:relative">
+              <i data-lucide="send" style="width:15px;height:15px"></i>
+              <span style="position:absolute;top:-2px;right:-2px;width:10px;height:10px;border-radius:100px;background:var(--c-ac);border:2px solid var(--c-bg)"></span>
+            </button>
+          </div>
+        </header>
+        <!-- tabs -->
+        <div style="padding:0 20px;display:flex;align-items:center;gap:20px;border-bottom:1px solid var(--c-bd);flex-shrink:0">
+          <button style="font-size:13px;font-weight:700;color:var(--c-tx);background:none;border:none;cursor:pointer;padding:11px 0;border-bottom:2px solid var(--c-tx);margin-bottom:-1px;font-family:inherit">Pour toi</button>
+          <button style="font-size:13px;font-weight:400;color:var(--c-tx3);background:none;border:none;cursor:pointer;padding:11px 0;border-bottom:2px solid transparent;margin-bottom:-1px;font-family:inherit">Abonnements</button>
+          <button style="font-size:13px;font-weight:400;color:var(--c-tx3);background:none;border:none;cursor:pointer;padding:11px 0;border-bottom:2px solid transparent;margin-bottom:-1px;font-family:inherit">Proches</button>
+          <div style="margin-left:auto"><i data-lucide="sliders-horizontal" style="width:15px;height:15px;color:var(--c-tx3)"></i></div>
+        </div>
+        <!-- stories -->
+        <div class="no-scrollbar" style="padding:13px 20px;display:flex;gap:12px;overflow-x:auto;flex-shrink:0;border-bottom:1px solid var(--c-bd)">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:5px;flex-shrink:0">
+            <div style="width:54px;height:54px;border-radius:17px;background:var(--c-sf);display:flex;align-items:center;justify-content:center;border:1.5px dashed var(--c-bd2)">
+              <i data-lucide="plus" style="width:18px;height:18px;color:var(--c-tx3)"></i>
+            </div>
+            <span style="font-size:10px;color:var(--c-tx3)">Ton mot</span>
+          </div>
+          <sc-for list="{{ stories }}" as="s" hint-placeholder-count="4">
+            <button onClick="{{ go.story }}" style="display:flex;flex-direction:column;align-items:center;gap:5px;flex-shrink:0;background:none;border:none;cursor:pointer;padding:0">
+              <div style="width:54px;height:54px;border-radius:17px;overflow:hidden;box-shadow:0 0 0 2px var(--c-bg),0 0 0 3.5px var(--c-ac)">
+                <div style="width:100%;height:100%;background:{{ s.g }}"></div>
+              </div>
+              <span style="font-size:10px;color:var(--c-tx2)">{{ s.n }}</span>
+            </button>
+          </sc-for>
+        </div>
+        <!-- posts -->
+        <div class="no-scrollbar" style="flex:1;overflow-y:auto;padding:14px 14px 100px;display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ posts }}" as="p" hint-placeholder-count="3">
+            <article onClick="{{ go.post }}" style="background:var(--c-sf);border:1px solid var(--c-bd);border-radius:24px;padding:15px;cursor:pointer">
+              <div style="display:flex;align-items:center;gap:11px">
+                <div style="width:40px;height:40px;border-radius:13px;background:{{ p.avC }};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                  <span class="serif" style="font-size:17px;color:#fff">{{ p.avI }}</span>
+                </div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:13px;font-weight:600;color:var(--c-tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.user }} <span style="color:var(--c-tx3);font-weight:400">@{{ p.handle }} · {{ p.time }}</span></div>
+                  <div style="font-size:10px;color:var(--c-tx4)">public</div>
+                </div>
+                <button style="width:30px;height:30px;border-radius:100px;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center" onClick="{{ p.stopProp }}">
+                  <i data-lucide="more-horizontal" style="width:15px;height:15px;color:var(--c-tx3)"></i>
+                </button>
+              </div>
+
+              <sc-if value="{{ p.isText }}" hint-placeholder-val="{{ false }}">
+                <p class="serif" style="font-size:19px;line-height:1.45;color:var(--c-tx);margin:10px 0 0" dangerouslySetInnerHTML="{{ p.bodyHtml }}"></p>
+              </sc-if>
+              <sc-if value="{{ p.isImage }}" hint-placeholder-val="{{ false }}">
+                <p style="font-size:13px;line-height:1.55;color:var(--c-tx2);margin:10px 0 0">{{ p.body }}</p>
+                <div style="margin-top:9px;aspect-ratio:4/3;border-radius:16px;background:{{ p.image }}"></div>
+              </sc-if>
+              <sc-if value="{{ p.isGallery }}" hint-placeholder-val="{{ false }}">
+                <p style="font-size:13px;line-height:1.55;color:var(--c-tx2);margin:10px 0 0">{{ p.body }}</p>
+                <div style="margin-top:9px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px">
+                  <div style="aspect-ratio:1;border-radius:13px;background:{{ p.img0 }}"></div>
+                  <div style="aspect-ratio:1;border-radius:13px;background:{{ p.img1 }}"></div>
+                  <div style="aspect-ratio:1;border-radius:13px;background:{{ p.img2 }}"></div>
+                </div>
+              </sc-if>
+              <sc-if value="{{ p.isQuote }}" hint-placeholder-val="{{ false }}">
+                <blockquote style="margin:10px 0 0;padding:13px 15px;border-radius:16px;background:var(--c-ac2);border-left:3px solid var(--c-ac)">
+                  <p class="serif" style="font-size:17px;line-height:1.45;color:var(--c-tx);margin:0">{{ p.body }}</p>
+                  <footer style="font-size:11px;color:var(--c-tx3);margin-top:7px">— {{ p.cite }}</footer>
+                </blockquote>
+              </sc-if>
+
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-top:13px;padding-top:11px;border-top:1px solid var(--c-bd)" onClick="{{ p.stopProp }}">
+                <div style="display:flex;align-items:center;gap:14px">
+                  <button onClick="{{ p.onLike }}" style="{{ p.likeStyle }}">
+                    <i data-lucide="heart" style="{{ p.likeIconStyle }}"></i>{{ p.likeCount }}
+                  </button>
+                  <button style="display:flex;align-items:center;gap:5px;font-size:13px;color:var(--c-tx3);background:none;border:none;cursor:pointer;padding:0;font-family:inherit">
+                    <i data-lucide="message-circle" style="width:15px;height:15px"></i>{{ p.comments }}
+                  </button>
+                  <button style="display:flex;align-items:center;gap:5px;font-size:13px;color:var(--c-tx3);background:none;border:none;cursor:pointer;padding:0;font-family:inherit">
+                    <i data-lucide="repeat-2" style="width:15px;height:15px"></i>{{ p.reposts }}
+                  </button>
+                </div>
+                <button onClick="{{ p.onSave }}" style="{{ p.saveStyle }}">
+                  <i data-lucide="bookmark" style="{{ p.saveIconStyle }}"></i>
+                </button>
+              </div>
+            </article>
+          </sc-for>
+        </div>
+      </section>
+    </sc-if>
+
+    <!-- ══ EXPLORE ══ -->
+    <sc-if value="{{ si.search }}" hint-placeholder-val="{{ false }}">
+      <section class="sin" style="display:flex;flex-direction:column;width:100%;height:100%;background:var(--c-bg)">
+        <header style="padding:12px 16px 8px;background:var(--c-gl);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--c-bd);flex-shrink:0">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="flex:1;height:42px;border-radius:15px;background:var(--c-in);display:flex;align-items:center;padding:0 12px;gap:8px">
+              <i data-lucide="search" style="width:15px;height:15px;color:var(--c-tx3)"></i>
+              <input placeholder="Rechercher idées, personnes..." style="flex:1;background:transparent;border:none;font-size:14px;color:var(--c-tx);outline:none;font-family:inherit"/>
+              <i data-lucide="mic" style="width:15px;height:15px;color:var(--c-tx3)"></i>
+            </div>
+            <button onClick="{{ go.feed }}" style="font-size:13px;font-weight:500;color:var(--c-tx2);background:none;border:none;cursor:pointer;font-family:inherit">Annuler</button>
+          </div>
+          <div class="no-scrollbar" style="display:flex;gap:7px;margin-top:9px;overflow-x:auto">
+            <button style="padding:5px 13px;border-radius:100px;background:var(--c-tx);color:var(--c-bg);font-size:12px;font-weight:500;border:none;cursor:pointer;white-space:nowrap;font-family:inherit">Tout</button>
+            <button style="padding:5px 13px;border-radius:100px;background:var(--c-sf);color:var(--c-tx2);font-size:12px;border:1px solid var(--c-bd2);cursor:pointer;white-space:nowrap;font-family:inherit">Notes</button>
+            <button style="padding:5px 13px;border-radius:100px;background:var(--c-sf);color:var(--c-tx2);font-size:12px;border:1px solid var(--c-bd2);cursor:pointer;white-space:nowrap;font-family:inherit">Photos</button>
+            <button style="padding:5px 13px;border-radius:100px;background:var(--c-sf);color:var(--c-tx2);font-size:12px;border:1px solid var(--c-bd2);cursor:pointer;white-space:nowrap;font-family:inherit">Personnes</button>
+            <button style="padding:5px 13px;border-radius:100px;background:var(--c-sf);color:var(--c-tx2);font-size:12px;border:1px solid var(--c-bd2);cursor:pointer;white-space:nowrap;font-family:inherit">Sujets</button>
+          </div>
+        </header>
+        <div class="no-scrollbar" style="flex:1;overflow-y:auto;padding:0 14px 100px">
+          <div style="padding-top:14px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+              <h3 class="serif" style="font-size:22px;color:var(--c-tx);margin:0">Ce qui circule</h3>
+              <span style="font-size:11px;color:var(--c-tx3)">aujourd'hui</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:7px">
+              <div style="padding:11px 13px;border-radius:16px;background:var(--c-sf);border:1px solid var(--c-bd);display:flex;align-items:center;justify-content:space-between">
+                <div>
+                  <div style="font-size:10px;color:var(--c-tx3)">Tech</div>
+                  <div style="font-size:14px;font-weight:600;color:var(--c-tx)">#NouveauWebGPU</div>
+                  <div style="font-size:11px;color:var(--c-tx3)">2 318 notes</div>
+                </div>
+                <i data-lucide="trending-up" style="width:19px;height:19px;color:var(--c-ac)"></i>
+              </div>
+              <div style="padding:11px 13px;border-radius:16px;background:var(--c-sf);border:1px solid var(--c-bd);display:flex;align-items:center;justify-content:space-between">
+                <div>
+                  <div style="font-size:10px;color:var(--c-tx3)">Lecture</div>
+                  <div style="font-size:14px;font-weight:600;color:var(--c-tx)">#CarnetDuMois</div>
+                  <div style="font-size:11px;color:var(--c-tx3)">1 042 notes</div>
+                </div>
+                <i data-lucide="book-open" style="width:19px;height:19px;color:var(--c-tx3)"></i>
+              </div>
+              <div style="padding:11px 13px;border-radius:16px;background:var(--c-sf);border:1px solid var(--c-bd);display:flex;align-items:center;justify-content:space-between">
+                <div>
+                  <div style="font-size:10px;color:var(--c-tx3)">Cinéma</div>
+                  <div style="font-size:14px;font-weight:600;color:var(--c-tx)">#FilmsLents</div>
+                  <div style="font-size:11px;color:var(--c-tx3)">812 notes</div>
+                </div>
+                <i data-lucide="film" style="width:19px;height:19px;color:var(--c-tx3)"></i>
+              </div>
+            </div>
+          </div>
+          <div style="padding-top:18px">
+            <h3 class="serif" style="font-size:22px;color:var(--c-tx);margin:0 0 10px">À découvrir</h3>
+            <div class="masonry">
+              <sc-for list="{{ cells }}" as="c" hint-placeholder-count="6">
+                <div class="masonry-item" style="border-radius:16px;overflow:hidden;background:{{ c.g }};height:{{ c.h }}px;position:relative">
+                  <sc-if value="{{ c.hasLabel }}" hint-placeholder-val="{{ false }}">
+                    <span style="position:absolute;bottom:8px;left:10px;font-size:10px;font-weight:600;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.4)">{{ c.label }}</span>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </section>
+    </sc-if>
+
+    <!-- ══ COMPOSE ══ -->
+    <sc-if value="{{ si.compose }}" hint-placeholder-val="{{ false }}">
+      <section class="sin" style="display:flex;flex-direction:column;width:100%;height:100%;background:var(--c-bg)">
+        <header style="padding:12px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--c-bd)">
+          <button onClick="{{ go.feed }}" style="font-size:13px;color:var(--c-tx2);background:none;border:none;cursor:pointer;font-family:inherit">Annuler</button>
+          <span class="serif" style="font-size:17px;color:var(--c-tx)">nouvelle note</span>
+          <button onClick="{{ go.feed }}" style="padding:0 15px;height:34px;border-radius:100px;background:var(--c-tx);color:var(--c-bg);font-size:12px;font-weight:600;border:none;cursor:pointer;font-family:inherit">Publier</button>
+        </header>
+        <div class="no-scrollbar" style="flex:1;padding:16px 20px;display:flex;flex-direction:column;overflow-y:auto">
+          <div style="display:flex;align-items:flex-start;gap:12px">
+            <div style="width:40px;height:40px;border-radius:13px;background:var(--c-ac);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <span class="serif" style="font-size:17px;color:#fff">A</span>
+            </div>
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:600;color:var(--c-tx)">Ada L. <span style="color:var(--c-tx3);font-weight:400">· public</span></div>
+              <textarea rows="6" placeholder="Qu'est‑ce qui te traverse ?" style="width:100%;margin-top:6px;background:transparent;border:none;outline:none;font-family:'Instrument Serif',Georgia,serif;font-size:22px;line-height:1.45;color:var(--c-tx);resize:none"></textarea>
+            </div>
+          </div>
+          <div class="no-scrollbar" style="display:flex;gap:8px;overflow-x:auto;margin-top:8px">
+            <div style="width:88px;height:116px;border-radius:17px;background:linear-gradient(135deg,var(--c-ac),var(--c-acd));flex-shrink:0;position:relative">
+              <button style="position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:100px;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;border:none;cursor:pointer"><i data-lucide="x" style="width:11px;height:11px;color:#fff"></i></button>
+            </div>
+            <div style="width:88px;height:116px;border-radius:17px;background:var(--c-sf2);flex-shrink:0;position:relative">
+              <button style="position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:100px;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;border:none;cursor:pointer"><i data-lucide="x" style="width:11px;height:11px;color:#fff"></i></button>
+            </div>
+            <button style="width:88px;height:116px;border-radius:17px;background:var(--c-sf);border:1.5px dashed var(--c-bd2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:11px;color:var(--c-tx3);cursor:pointer;flex-shrink:0;font-family:inherit">
+              <i data-lucide="plus" style="width:18px;height:18px"></i>Ajouter
+            </button>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:12px">
+            <span style="padding:4px 11px;border-radius:100px;background:var(--c-tag);font-size:12px;color:var(--c-tx2)">#carnetdumois</span>
+            <span style="padding:4px 11px;border-radius:100px;background:var(--c-tag);font-size:12px;color:var(--c-tx2)">#lecture</span>
+            <button style="padding:4px 11px;border-radius:100px;border:1.5px dashed var(--c-bd2);background:transparent;font-size:12px;color:var(--c-tx3);cursor:pointer;display:flex;align-items:center;gap:4px;font-family:inherit">
+              <i data-lucide="plus" style="width:11px;height:11px"></i>tag
+            </button>
+          </div>
+          <div style="flex:1"></div>
+          <div style="padding:7px;border-radius:17px;background:var(--c-sf);display:flex;align-items:center;justify-content:space-between;margin-top:12px">
+            <div style="display:flex;gap:2px">
+              <button style="width:35px;height:35px;border-radius:11px;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center"><i data-lucide="image" style="width:16px;height:16px;color:var(--c-tx2)"></i></button>
+              <button style="width:35px;height:35px;border-radius:11px;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center"><i data-lucide="camera" style="width:16px;height:16px;color:var(--c-tx2)"></i></button>
+              <button style="width:35px;height:35px;border-radius:11px;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center"><i data-lucide="music-2" style="width:16px;height:16px;color:var(--c-tx2)"></i></button>
+              <button style="width:35px;height:35px;border-radius:11px;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center"><i data-lucide="map-pin" style="width:16px;height:16px;color:var(--c-tx2)"></i></button>
+              <button style="width:35px;height:35px;border-radius:11px;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center"><i data-lucide="smile" style="width:16px;height:16px;color:var(--c-tx2)"></i></button>
+            </div>
+            <span style="font-size:12px;color:var(--c-tx3);padding-right:8px">220</span>
+          </div>
+        </div>
+      </section>
+    </sc-if>
+
+    <!-- ══ NOTIFICATIONS ══ -->
+    <sc-if value="{{ si.notifs }}" hint-placeholder-val="{{ false }}">
+      <section class="sin" style="display:flex;flex-direction:column;width:100%;height:100%;background:var(--c-bg)">
+        <header style="padding:12px 20px 10px;display:flex;align-items:center;justify-content:space-between;background:var(--c-gl);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--c-bd);flex-shrink:0">
+          <span class="serif" style="font-size:27px;color:var(--c-tx)">Activité</span>
+          <button style="width:36px;height:36px;border-radius:100px;background:var(--c-sf);display:flex;align-items:center;justify-content:center;border:none;cursor:pointer">
+            <i data-lucide="check-check" style="width:15px;height:15px"></i>
+          </button>
+        </header>
+        <div style="padding:10px 16px 8px;display:flex;gap:7px;flex-shrink:0;border-bottom:1px solid var(--c-bd)">
+          <button style="padding:5px 13px;border-radius:100px;background:var(--c-tx);color:var(--c-bg);font-size:12px;font-weight:500;border:none;cursor:pointer;font-family:inherit">Tout</button>
+          <button style="padding:5px 13px;border-radius:100px;background:var(--c-sf);color:var(--c-tx2);font-size:12px;border:1px solid var(--c-bd2);cursor:pointer;font-family:inherit">Mentions</button>
+          <button style="padding:5px 13px;border-radius:100px;background:var(--c-sf);color:var(--c-tx2);font-size:12px;border:1px solid var(--c-bd2);cursor:pointer;font-family:inherit">Réponses</button>
+          <button style="padding:5px 13px;border-radius:100px;background:var(--c-sf);color:var(--c-tx2);font-size:12px;border:1px solid var(--c-bd2);cursor:pointer;font-family:inherit">Abonnés</button>
+        </div>
+        <div class="no-scrollbar" style="flex:1;overflow-y:auto;padding:8px 10px 100px">
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--c-tx3);padding:8px 8px 4px">Aujourd'hui</div>
+          <sc-for list="{{ notifsToday }}" as="n" hint-placeholder-count="3">
+            <div style="display:flex;align-items:flex-start;gap:11px;padding:11px 12px;border-radius:17px;background:var(--c-sf);margin-bottom:5px">
+              <div style="position:relative;flex-shrink:0">
+                <div style="width:40px;height:40px;border-radius:13px;background:{{ n.avC }};display:flex;align-items:center;justify-content:center">
+                  <span class="serif" style="font-size:16px;color:#fff">{{ n.avI }}</span>
+                </div>
+                <div style="position:absolute;bottom:-2px;right:-2px;width:18px;height:18px;border-radius:100px;background:var(--c-bg);display:flex;align-items:center;justify-content:center">
+                  <div style="width:14px;height:14px;border-radius:100px;background:{{ n.icBg }};display:flex;align-items:center;justify-content:center">
+                    <i data-lucide="{{ n.ic }}" style="width:8px;height:8px;color:#fff"></i>
+                  </div>
+                </div>
+              </div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:13px;color:var(--c-tx);line-height:1.4" dangerouslySetInnerHTML="{{ n.txHtml }}"></div>
+                <div style="font-size:11px;color:var(--c-tx3);margin-top:1px">{{ n.sub }}</div>
+              </div>
+              <span style="font-size:11px;color:var(--c-tx4);flex-shrink:0">{{ n.time }}</span>
+            </div>
+          </sc-for>
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--c-tx3);padding:12px 8px 4px">Cette semaine</div>
+          <sc-for list="{{ notifsWeek }}" as="n" hint-placeholder-count="2">
+            <div style="display:flex;align-items:flex-start;gap:11px;padding:11px 12px;border-radius:17px;margin-bottom:4px">
+              <div style="width:40px;height:40px;border-radius:13px;background:{{ n.avC }};display:flex;align-items:center;justify-content:center;opacity:.7;flex-shrink:0">
+                <span class="serif" style="font-size:16px;color:#fff">{{ n.avI }}</span>
+              </div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:13px;color:var(--c-tx2);line-height:1.4" dangerouslySetInnerHTML="{{ n.txHtml }}"></div>
+                <div style="font-size:11px;color:var(--c-tx3);margin-top:1px">{{ n.sub }}</div>
+              </div>
+              <span style="font-size:11px;color:var(--c-tx4);flex-shrink:0">{{ n.time }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+    </sc-if>
+
+    <!-- ══ MESSAGES ══ -->
+    <sc-if value="{{ si.messages }}" hint-placeholder-val="{{ false }}">
+      <section class="sin" style="display:flex;flex-direction:column;width:100%;height:100%;background:var(--c-bg)">
+        <header style="padding:12px 20px 10px;background:var(--c-gl);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--c-bd);flex-shrink:0">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <span class="serif" style="font-size:27px;color:var(--c-tx)">Messages</span>
+            <button style="width:36px;height:36px;border-radius:100px;background:var(--c-tx);display:flex;align-items:center;justify-content:center;border:none;cursor:pointer">
+              <i data-lucide="pencil" style="width:15px;height:15px;color:var(--c-bg)"></i>
+            </button>
+          </div>
+          <div style="margin-top:10px;height:40px;border-radius:14px;background:var(--c-in);display:flex;align-items:center;padding:0 12px;gap:8px">
+            <i data-lucide="search" style="width:14px;height:14px;color:var(--c-tx3)"></i>
+            <input placeholder="Rechercher une conversation" style="flex:1;background:transparent;border:none;font-size:13px;color:var(--c-tx);outline:none;font-family:inherit"/>
+          </div>
+        </header>
+        <div class="no-scrollbar" style="flex:1;overflow-y:auto;padding:8px 8px 100px">
+          <sc-for list="{{ threads }}" as="t" hint-placeholder-count="4">
+            <button onClick="{{ go.thread }}" style="width:100%;display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:17px;background:none;border:none;cursor:pointer;text-align:left;font-family:inherit">
+              <div style="position:relative;flex-shrink:0">
+                <div style="width:48px;height:48px;border-radius:17px;background:{{ t.avC }};display:flex;align-items:center;justify-content:center">
+                  <span class="serif" style="font-size:19px;color:#fff">{{ t.avI }}</span>
+                </div>
+                <sc-if value="{{ t.online }}" hint-placeholder-val="{{ false }}">
+                  <div style="position:absolute;bottom:0;right:0;width:12px;height:12px;border-radius:100px;background:var(--c-ok);border:2px solid var(--c-bg)"></div>
+                </sc-if>
+              </div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:14px;font-weight:600;color:var(--c-tx)">{{ t.n }}</div>
+                <div style="font-size:12px;color:var(--c-tx3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px">{{ t.last }}</div>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0">
+                <span style="font-size:11px;color:var(--c-tx3)">{{ t.time }}</span>
+                <sc-if value="{{ t.hasUnread }}" hint-placeholder-val="{{ false }}">
+                  <span style="min-width:18px;height:18px;border-radius:100px;background:var(--c-ac);color:#fff;font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;padding:0 5px">{{ t.unread }}</span>
+                </sc-if>
+              </div>
+            </button>
+          </sc-for>
+        </div>
+      </section>
+    </sc-if>
+
+    <!-- ══ THREAD ══ -->
+    <sc-if value="{{ si.thread }}" hint-placeholder-val="{{ false }}">
+      <section class="sin" style="display:flex;flex-direction:column;width:100%;height:100%;background:var(--c-bg)">
+        <header style="padding:10px 12px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--c-bd);background:var(--c-gl);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);flex-shrink:0">
+          <button onClick="{{ go.messages }}" style="width:36px;height:36px;border-radius:100px;background:none;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer">
+            <i data-lucide="chevron-left" style="width:20px;height:20px;color:var(--c-tx)"></i>
+          </button>
+          <div style="width:36px;height:36px;border-radius:12px;background:var(--av1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <span class="serif" style="font-size:16px;color:#fff">M</span>
+          </div>
+          <div style="flex:1">
+            <div style="font-size:14px;font-weight:600;color:var(--c-tx)">Margaux</div>
+            <div style="font-size:11px;color:var(--c-ok)">en ligne</div>
+          </div>
+          <button style="width:34px;height:34px;border-radius:100px;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center"><i data-lucide="phone" style="width:15px;height:15px;color:var(--c-tx2)"></i></button>
+          <button style="width:34px;height:34px;border-radius:100px;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center"><i data-lucide="more-horizontal" style="width:15px;height:15px;color:var(--c-tx2)"></i></button>
+        </header>
+        <div class="no-scrollbar" style="flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:7px">
+          <div style="text-align:center;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--c-tx3)">Hier · 21:14</div>
+          <div style="max-width:75%;background:var(--c-sf);border-radius:17px 17px 17px 4px;padding:10px 13px;font-size:13px;color:var(--c-tx)">Tu as vu la nouvelle police ?</div>
+          <div style="max-width:75%;background:var(--c-sf);border-radius:17px 17px 17px 4px;padding:10px 13px;font-size:13px;color:var(--c-tx)">Je crois que ça rend très bien sur les titres.</div>
+          <div style="max-width:75%;background:var(--c-tx);border-radius:17px 17px 4px 17px;padding:10px 13px;font-size:13px;color:var(--c-bg);align-self:flex-end">Oui, je trouve aussi. Très carnet.</div>
+          <div style="text-align:center;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--c-tx3);padding-top:8px">Aujourd'hui · 09:02</div>
+          <div style="max-width:75%;background:var(--c-sf);border-radius:17px 17px 17px 4px;padding:10px 13px;font-size:13px;color:var(--c-tx)">On se voit ce soir ?</div>
+          <div style="max-width:75%;background:var(--c-tx);border-radius:17px 17px 4px 17px;padding:10px 13px;font-size:13px;color:var(--c-bg);align-self:flex-end">Avec plaisir. 19h ?</div>
+        </div>
+        <div style="padding:10px 12px;border-top:1px solid var(--c-bd);display:flex;align-items:center;gap:8px;background:var(--c-bg);flex-shrink:0">
+          <button style="width:38px;height:38px;border-radius:100px;background:var(--c-sf);display:flex;align-items:center;justify-content:center;border:none;cursor:pointer"><i data-lucide="plus" style="width:15px;height:15px"></i></button>
+          <div style="flex:1;height:38px;border-radius:100px;background:var(--c-sf);display:flex;align-items:center;padding:0 13px;gap:7px">
+            <input placeholder="Écrire un message" style="flex:1;background:transparent;border:none;font-size:13px;color:var(--c-tx);outline:none;font-family:inherit"/>
+            <i data-lucide="smile" style="width:15px;height:15px;color:var(--c-tx3)"></i>
+          </div>
+          <button style="width:38px;height:38px;border-radius:100px;background:var(--c-ac);display:flex;align-items:center;justify-content:center;border:none;cursor:pointer"><i data-lucide="send" style="width:15px;height:15px;color:#fff"></i></button>
+        </div>
+      </section>
+    </sc-if>
+
+    <!-- ══ PROFILE ══ -->
+    <sc-if value="{{ si.profile }}" hint-placeholder-val="{{ false }}">
+      <section class="sin" style="display:flex;flex-direction:column;width:100%;height:100%;background:var(--c-bg)">
+        <div style="position:relative;flex-shrink:0">
+          <div style="height:128px;background:linear-gradient(135deg,var(--c-ac) 0%,var(--c-acd) 55%,#111110 100%)"></div>
+          <div style="position:absolute;top:12px;left:0;right:0;padding:0 16px;display:flex;justify-content:space-between">
+            <button onClick="{{ go.feed }}" style="width:36px;height:36px;border-radius:100px;background:rgba(255,255,255,.15);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;border:none;cursor:pointer">
+              <i data-lucide="arrow-left" style="width:15px;height:15px;color:#fff"></i>
+            </button>
+            <button onClick="{{ go.settings }}" style="width:36px;height:36px;border-radius:100px;background:rgba(255,255,255,.15);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;border:none;cursor:pointer">
+              <i data-lucide="settings" style="width:15px;height:15px;color:#fff"></i>
+            </button>
+          </div>
+          <div style="position:absolute;bottom:-42px;left:20px">
+            <div style="width:84px;height:84px;border-radius:26px;background:var(--c-bg);padding:4px">
+              <div style="width:100%;height:100%;border-radius:22px;background:var(--c-tx);display:flex;align-items:center;justify-content:center">
+                <span class="serif" style="font-size:30px;color:var(--c-bg)">A</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="padding:46px 20px 12px">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between">
+            <div>
+              <h2 class="serif" style="font-size:26px;line-height:1.1;color:var(--c-tx);margin:0">Ada Lovelace</h2>
+              <div style="font-size:12px;color:var(--c-tx3);margin-top:3px">@ada · Paris</div>
+            </div>
+            <div style="display:flex;gap:7px">
+              <button style="width:34px;height:34px;border-radius:100px;background:var(--c-sf);display:flex;align-items:center;justify-content:center;border:none;cursor:pointer"><i data-lucide="share-2" style="width:15px;height:15px"></i></button>
+              <button style="padding:0 14px;height:34px;border-radius:100px;background:var(--c-tx);color:var(--c-bg);font-size:12px;font-weight:600;border:none;cursor:pointer;font-family:inherit">Modifier</button>
+            </div>
+          </div>
+          <p style="font-size:13px;line-height:1.6;color:var(--c-tx2);margin:10px 0 0">Écrit des notes, lit des cartes, dessine des machines. <span style="color:var(--c-ac)">#carnetdumois</span></p>
+          <div style="display:flex;gap:18px;margin-top:12px;font-size:13px">
+            <div><span style="font-weight:700;color:var(--c-tx)">182</span> <span style="color:var(--c-tx3)">notes</span></div>
+            <div><span style="font-weight:700;color:var(--c-tx)">1 204</span> <span style="color:var(--c-tx3)">abonnés</span></div>
+            <div><span style="font-weight:700;color:var(--c-tx)">312</span> <span style="color:var(--c-tx3)">suivis</span></div>
+          </div>
+        </div>
+        <div style="padding:0 20px;display:flex;border-bottom:1px solid var(--c-bd)">
+          <button style="padding:9px 11px;font-size:13px;font-weight:600;color:var(--c-tx);background:none;border:none;cursor:pointer;border-bottom:2px solid var(--c-tx);margin-bottom:-1px;font-family:inherit">Notes</button>
+          <button style="padding:9px 11px;font-size:13px;color:var(--c-tx3);background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;font-family:inherit">Images</button>
+          <button style="padding:9px 11px;font-size:13px;color:var(--c-tx3);background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;font-family:inherit">Marqués</button>
+          <button style="padding:9px 11px;font-size:13px;color:var(--c-tx3);background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;font-family:inherit">Aimés</button>
+        </div>
+        <div class="no-scrollbar" style="flex:1;overflow-y:auto;padding:12px 14px 100px;display:flex;flex-direction:column;gap:9px">
+          <sc-for list="{{ posts }}" as="p" hint-placeholder-count="2">
+            <article onClick="{{ go.post }}" style="background:var(--c-sf);border:1px solid var(--c-bd);border-radius:20px;padding:13px;cursor:pointer">
+              <p class="serif" style="font-size:17px;line-height:1.45;color:var(--c-tx);margin:0" dangerouslySetInnerHTML="{{ p.bodyHtml }}"></p>
+              <div style="display:flex;align-items:center;gap:13px;margin-top:9px;font-size:12px;color:var(--c-tx3)">
+                <span style="display:flex;align-items:center;gap:4px"><i data-lucide="heart" style="width:13px;height:13px"></i>{{ p.likes }}</span>
+                <span style="display:flex;align-items:center;gap:4px"><i data-lucide="message-circle" style="width:13px;height:13px"></i>{{ p.comments }}</span>
+                <span style="color:var(--c-tx4)">{{ p.time }}</span>
+              </div>
+            </article>
+          </sc-for>
+        </div>
+      </section>
+    </sc-if>
+
+    <!-- ══ POST DETAIL ══ -->
+    <sc-if value="{{ si.post }}" hint-placeholder-val="{{ false }}">
+      <section class="sin" style="display:flex;flex-direction:column;width:100%;height:100%;background:var(--c-bg)">
+        <header style="padding:10px 12px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--c-bd);background:var(--c-gl);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);flex-shrink:0">
+          <button onClick="{{ go.feed }}" style="width:36px;height:36px;border-radius:100px;background:none;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer"><i data-lucide="chevron-left" style="width:20px;height:20px;color:var(--c-tx)"></i></button>
+          <span class="serif" style="font-size:17px;color:var(--c-tx)">note</span>
+          <div style="margin-left:auto">
+            <button onClick="{{ go.report }}" style="padding:0 12px;height:30px;border-radius:100px;background:var(--c-sf);border:none;cursor:pointer;display:flex;align-items:center;gap:5px;font-size:11px;color:var(--c-tx2);font-family:inherit">
+              <i data-lucide="flag" style="width:13px;height:13px"></i>Signaler
+            </button>
+          </div>
+        </header>
+        <div class="no-scrollbar" style="flex:1;overflow-y:auto;padding-bottom:80px">
+          <article style="padding:18px">
+            <div style="display:flex;align-items:center;gap:11px">
+              <div style="width:42px;height:42px;border-radius:14px;background:var(--av1);display:flex;align-items:center;justify-content:center;flex-shrink:0"><span class="serif" style="font-size:18px;color:#fff">M</span></div>
+              <div style="flex:1">
+                <div style="font-size:13px;font-weight:600;color:var(--c-tx)">Margaux <span style="color:var(--c-tx3);font-weight:400">@mgx · 2h</span></div>
+                <div style="font-size:10px;color:var(--c-tx3)">Paris · Belleville</div>
+              </div>
+              <button style="padding:5px 14px;border-radius:100px;border:1px solid var(--c-bd2);background:transparent;font-size:12px;font-weight:500;color:var(--c-tx);cursor:pointer;font-family:inherit">Suivre</button>
+            </div>
+            <p class="serif" style="font-size:22px;line-height:1.45;color:var(--c-tx);margin:14px 0 0">Hier soir, le ciel était <em>parfait</em> — la couleur exacte d'un vieux papier journal.</p>
+            <p style="font-size:13px;line-height:1.6;color:var(--c-tx2);margin:9px 0 0">Je crois que c'est ce qui m'a poussée à reprendre l'aquarelle. Quelques essais ce matin :</p>
+            <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:5px">
+              <div style="aspect-ratio:1;border-radius:16px;background:linear-gradient(135deg,var(--c-ac),var(--c-acd))"></div>
+              <div style="aspect-ratio:1;border-radius:16px;background:var(--c-sf2)"></div>
+              <div style="aspect-ratio:1;border-radius:16px;background:linear-gradient(135deg,var(--c-ok),#064E3B)"></div>
+              <div style="aspect-ratio:1;border-radius:16px;background:linear-gradient(135deg,var(--c-sf2),var(--c-ac2))"></div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding-top:12px;border-top:1px solid var(--c-bd)">
+              <div style="display:flex;gap:15px">
+                <button style="display:flex;align-items:center;gap:5px;font-size:13px;color:var(--c-tx3);background:none;border:none;cursor:pointer;font-family:inherit"><i data-lucide="heart" style="width:16px;height:16px"></i>248</button>
+                <button style="display:flex;align-items:center;gap:5px;font-size:13px;color:var(--c-tx3);background:none;border:none;cursor:pointer;font-family:inherit"><i data-lucide="message-circle" style="width:16px;height:16px"></i>32</button>
+                <button style="display:flex;align-items:center;gap:5px;font-size:13px;color:var(--c-tx3);background:none;border:none;cursor:pointer;font-family:inherit"><i data-lucide="repeat-2" style="width:16px;height:16px"></i>14</button>
+              </div>
+              <button style="background:none;border:none;cursor:pointer"><i data-lucide="bookmark" style="width:16px;height:16px;color:var(--c-tx3)"></i></button>
+            </div>
+          </article>
+          <div style="height:1px;background:var(--c-bd);margin:0 18px"></div>
+          <div style="padding:14px;display:flex;flex-direction:column;gap:13px">
+            <div style="display:flex;align-items:flex-start;gap:9px">
+              <div style="width:34px;height:34px;border-radius:11px;background:var(--c-tx);display:flex;align-items:center;justify-content:center;flex-shrink:0"><span class="serif" style="font-size:14px;color:var(--c-bg)">A</span></div>
+              <div style="flex:1">
+                <div style="background:var(--c-sf);border-radius:15px 15px 15px 3px;padding:9px 11px">
+                  <div style="font-size:12px;font-weight:600;color:var(--c-tx)">Ada <span style="color:var(--c-tx3);font-weight:400">· 1h</span></div>
+                  <div style="font-size:13px;color:var(--c-tx);margin-top:2px">Les deux du bas sont magnifiques.</div>
+                </div>
+                <div style="display:flex;gap:12px;margin-top:4px;margin-left:8px;font-size:11px;color:var(--c-tx3)">
+                  <button style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--c-tx3);font-family:inherit">Répondre</button>
+                  <button style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--c-tx3);font-family:inherit">J'aime · 12</button>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:9px">
+              <div style="width:34px;height:34px;border-radius:11px;background:var(--av2);display:flex;align-items:center;justify-content:center;flex-shrink:0"><span class="serif" style="font-size:14px;color:#fff">J</span></div>
+              <div style="flex:1">
+                <div style="background:var(--c-sf);border-radius:15px 15px 15px 3px;padding:9px 11px">
+                  <div style="font-size:12px;font-weight:600;color:var(--c-tx)">Jules <span style="color:var(--c-tx3);font-weight:400">· 45min</span></div>
+                  <div style="font-size:13px;color:var(--c-tx);margin-top:2px">Quel papier tu utilises ?</div>
+                </div>
+                <div style="display:flex;gap:12px;margin-top:4px;margin-left:8px;font-size:11px;color:var(--c-tx3)">
+                  <button style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--c-tx3);font-family:inherit">Répondre</button>
+                  <button style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--c-tx3);font-family:inherit">J'aime · 3</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="padding:10px 12px;border-top:1px solid var(--c-bd);display:flex;align-items:center;gap:8px;background:var(--c-bg);flex-shrink:0">
+          <div style="width:34px;height:34px;border-radius:11px;background:var(--c-tx);display:flex;align-items:center;justify-content:center;flex-shrink:0"><span class="serif" style="font-size:14px;color:var(--c-bg)">A</span></div>
+          <div style="flex:1;height:38px;border-radius:100px;background:var(--c-sf);display:flex;align-items:center;padding:0 13px">
+            <input placeholder="Répondre à Margaux..." style="flex:1;background:transparent;border:none;font-size:13px;color:var(--c-tx);outline:none;font-family:inherit"/>
+          </div>
+          <button style="width:38px;height:38px;border-radius:100px;background:var(--c-ac);display:flex;align-items:center;justify-content:center;border:none;cursor:pointer"><i data-lucide="send" style="width:15px;height:15px;color:#fff"></i></button>
+        </div>
+      </section>
+    </sc-if>
+
+    <!-- ══ SETTINGS ══ -->
+    <sc-if value="{{ si.settings }}" hint-placeholder-val="{{ false }}">
+      <section class="sin" style="display:flex;flex-direction:column;width:100%;height:100%;background:var(--c-bg)">
+        <header style="padding:10px 12px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--c-bd);background:var(--c-gl);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);flex-shrink:0">
+          <button onClick="{{ go.profile }}" style="width:36px;height:36px;border-radius:100px;background:none;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer"><i data-lucide="chevron-left" style="width:20px;height:20px;color:var(--c-tx)"></i></button>
+          <span class="serif" style="font-size:22px;color:var(--c-tx)">Réglages</span>
+        </header>
+        <div class="no-scrollbar" style="flex:1;overflow-y:auto;padding:14px 14px 100px;display:flex;flex-direction:column;gap:18px">
+          <!-- profile row -->
+          <div style="display:flex;align-items:center;gap:12px;padding:13px;border-radius:19px;background:var(--c-sf);border:1px solid var(--c-bd)">
+            <div style="width:46px;height:46px;border-radius:15px;background:var(--c-tx);display:flex;align-items:center;justify-content:center;flex-shrink:0"><span class="serif" style="font-size:19px;color:var(--c-bg)">A</span></div>
+            <div style="flex:1"><div style="font-size:14px;font-weight:600;color:var(--c-tx)">Ada Lovelace</div><div style="font-size:11px;color:var(--c-tx3)">@ada · gérer le compte</div></div>
+            <i data-lucide="chevron-right" style="width:15px;height:15px;color:var(--c-tx3)"></i>
+          </div>
+
+          <!-- APPARENCE -->
+          <div>
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--c-tx3);padding:0 3px;margin-bottom:8px">Apparence</div>
+            <div style="border-radius:19px;background:var(--c-sf);border:1px solid var(--c-bd);overflow:hidden">
+              <!-- toggle row -->
+              <div style="padding:14px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--c-bd)">
+                <div style="width:36px;height:36px;border-radius:12px;background:var(--c-ac2);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                  <i data-lucide="{{ darkIcon }}" style="width:17px;height:17px;color:var(--c-ac)"></i>
+                </div>
+                <div style="flex:1">
+                  <div style="font-size:14px;font-weight:600;color:var(--c-tx)">{{ darkLabel }}</div>
+                  <div style="font-size:11px;color:var(--c-tx3);margin-top:1px">{{ darkSub }}</div>
+                </div>
+                <button onClick="{{ toggleDark }}" style="{{ toggleStyle }}">
+                  <span style="{{ toggleKnobStyle }}"></span>
+                </button>
+              </div>
+              <!-- 3 presets row -->
+              <div style="padding:12px 14px;display:flex;gap:8px">
+                <button onClick="{{ setLight }}" style="{{ lightBtnStyle }}">
+                  <i data-lucide="sun" style="width:13px;height:13px"></i>Clair
+                </button>
+                <button onClick="{{ setDark }}" style="{{ darkBtnStyle }}">
+                  <i data-lucide="moon" style="width:13px;height:13px"></i>Sombre
+                </button>
+                <button style="padding:7px 13px;border-radius:11px;background:var(--c-in);color:var(--c-tx2);font-size:12px;font-weight:500;border:none;cursor:pointer;font-family:inherit">Auto</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Préférences -->
+          <div>
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--c-tx3);padding:0 3px;margin-bottom:8px">Préférences</div>
+            <div style="border-radius:19px;background:var(--c-sf);border:1px solid var(--c-bd);overflow:hidden">
+              <div style="padding:13px 14px;display:flex;align-items:center;gap:11px;border-bottom:1px solid var(--c-bd)"><i data-lucide="bell" style="width:15px;height:15px;color:var(--c-tx2)"></i><span style="flex:1;font-size:13px;color:var(--c-tx)">Notifications</span><i data-lucide="chevron-right" style="width:14px;height:14px;color:var(--c-tx3)"></i></div>
+              <div style="padding:13px 14px;display:flex;align-items:center;gap:11px;border-bottom:1px solid var(--c-bd)"><i data-lucide="languages" style="width:15px;height:15px;color:var(--c-tx2)"></i><span style="flex:1;font-size:13px;color:var(--c-tx)">Langue</span><span style="font-size:11px;color:var(--c-tx3)">FR</span><i data-lucide="chevron-right" style="width:14px;height:14px;color:var(--c-tx3)"></i></div>
+              <div style="padding:13px 14px;display:flex;align-items:center;gap:11px"><i data-lucide="accessibility" style="width:15px;height:15px;color:var(--c-tx2)"></i><span style="flex:1;font-size:13px;color:var(--c-tx)">Accessibilité</span><i data-lucide="chevron-right" style="width:14px;height:14px;color:var(--c-tx3)"></i></div>
+            </div>
+          </div>
+
+          <!-- Confidentialité -->
+          <div>
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--c-tx3);padding:0 3px;margin-bottom:8px">Confidentialité</div>
+            <div style="border-radius:19px;background:var(--c-sf);border:1px solid var(--c-bd);overflow:hidden">
+              <div style="padding:13px 14px;display:flex;align-items:center;gap:11px;border-bottom:1px solid var(--c-bd)">
+                <i data-lucide="lock" style="width:15px;height:15px;color:var(--c-tx2)"></i><span style="flex:1;font-size:13px;color:var(--c-tx)">Compte privé</span>
+                <div style="width:42px;height:24px;border-radius:100px;background:var(--c-bd2);position:relative;cursor:pointer"><span style="position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:100px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2)"></span></div>
+              </div>
+              <div style="padding:13px 14px;display:flex;align-items:center;gap:11px;border-bottom:1px solid var(--c-bd)">
+                <i data-lucide="eye-off" style="width:15px;height:15px;color:var(--c-tx2)"></i><span style="flex:1;font-size:13px;color:var(--c-tx)">Statut "vu"</span>
+                <div style="width:42px;height:24px;border-radius:100px;background:var(--c-ac);position:relative;cursor:pointer"><span style="position:absolute;top:2px;right:2px;width:20px;height:20px;border-radius:100px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2)"></span></div>
+              </div>
+              <div style="padding:13px 14px;display:flex;align-items:center;gap:11px"><i data-lucide="shield" style="width:15px;height:15px;color:var(--c-tx2)"></i><span style="flex:1;font-size:13px;color:var(--c-tx)">Sécurité</span><i data-lucide="chevron-right" style="width:14px;height:14px;color:var(--c-tx3)"></i></div>
+            </div>
+          </div>
+
+          <!-- Admin -->
+          <div>
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--c-tx3);padding:0 3px;margin-bottom:8px">Administration</div>
+            <div style="border-radius:19px;background:var(--c-sf);border:1px solid var(--c-bd);overflow:hidden">
+              <button onClick="{{ go.moderation }}" style="width:100%;padding:13px 14px;display:flex;align-items:center;gap:11px;background:none;border:none;cursor:pointer;text-align:left;font-family:inherit;border-bottom:1px solid var(--c-bd)">
+                <i data-lucide="shield-check" style="width:15px;height:15px;color:var(--c-ac)"></i><span style="flex:1;font-size:13px;color:var(--c-tx)">Panneau de modération</span>
+                <span style="padding:2px 7px;border-radius:100px;background:var(--c-ac2);font-size:9px;font-weight:600;color:var(--c-ac)">ADMIN</span>
+                <i data-lucide="chevron-right" style="width:14px;height:14px;color:var(--c-tx3)"></i>
+              </button>
+              <button onClick="{{ go.onboarding }}" style="width:100%;padding:13px 14px;display:flex;align-items:center;gap:11px;background:none;border:none;cursor:pointer;text-align:left;font-family:inherit">
+                <i data-lucide="log-out" style="width:15px;height:15px;color:var(--c-err)"></i><span style="flex:1;font-size:13px;font-weight:500;color:var(--c-err)">Se déconnecter</span>
+              </button>
+            </div>
+          </div>
+          <p style="text-align:center;font-size:11px;color:var(--c-tx4)">dad. v0.2 — maquette</p>
+        </div>
+      </section>
+    </sc-if>
+
+    <!-- ══ STORY PLAYER ══ -->
+    <sc-if value="{{ si.story }}" hint-placeholder-val="{{ false }}">
+      <section class="sin" style="display:flex;flex-direction:column;width:100%;height:100%;position:relative;overflow:hidden;background:#000">
+        <div style="position:absolute;inset:0;background:{{ curStory.g }};opacity:.92"></div>
+        <div style="position:absolute;top:0;left:0;right:0;height:180px;background:linear-gradient(to bottom,rgba(0,0,0,.65),transparent)"></div>
+        <div style="position:absolute;bottom:0;left:0;right:0;height:240px;background:linear-gradient(to top,rgba(0,0,0,.72),transparent)"></div>
+        <!-- progress bars -->
+        <div style="position:absolute;top:52px;left:12px;right:12px;display:flex;gap:4px;z-index:10">
+          <sc-for list="{{ storyBars }}" as="bar" hint-placeholder-count="6">
+            <div style="flex:1;height:3px;border-radius:100px;background:rgba(255,255,255,.3);overflow:hidden">
+              <div style="height:100%;background:#fff;width:{{ bar.w }};transition:width .1s linear"></div>
+            </div>
+          </sc-for>
+        </div>
+        <!-- header -->
+        <div style="position:absolute;top:64px;left:0;right:0;padding:0 16px;display:flex;align-items:center;gap:10px;z-index:10">
+          <div style="width:36px;height:36px;border-radius:12px;background:{{ curStory.g }};border:2px solid rgba(255,255,255,.7);flex-shrink:0"></div>
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:600;color:#fff">{{ curStory.n }}</div>
+            <div style="font-size:11px;color:rgba(255,255,255,.65)">il y a 3h</div>
+          </div>
+          <button onClick="{{ go.feed }}" style="width:36px;height:36px;border-radius:100px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;border:none;cursor:pointer">
+            <i data-lucide="x" style="width:16px;height:16px;color:#fff"></i>
+          </button>
+        </div>
+        <!-- tap zones -->
+        <div style="position:absolute;inset:0;display:flex;z-index:5">
+          <button onClick="{{ prevStory }}" style="flex:1;background:transparent;border:none;cursor:pointer"></button>
+          <button onClick="{{ nextStory }}" style="flex:1;background:transparent;border:none;cursor:pointer"></button>
+        </div>
+        <!-- content -->
+        <div style="position:absolute;bottom:44px;left:0;right:0;padding:0 20px;z-index:10">
+          <p class="serif" style="font-size:26px;line-height:1.3;color:#fff;text-shadow:0 1px 10px rgba(0,0,0,.35);margin:0">Une pensée du matin,<br/>avant le café.</p>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:16px">
+            <div style="flex:1;height:42px;border-radius:100px;background:rgba(255,255,255,.15);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.25);display:flex;align-items:center;padding:0 14px;gap:7px">
+              <input placeholder="Répondre à cette story..." style="flex:1;background:transparent;border:none;font-size:13px;color:#fff;outline:none;font-family:inherit"/>
+              <i data-lucide="smile" style="width:15px;height:15px;color:rgba(255,255,255,.65)"></i>
+            </div>
+            <button style="width:42px;height:42px;border-radius:100px;background:rgba(255,255,255,.18);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.25);cursor:pointer">
+              <i data-lucide="send" style="width:16px;height:16px;color:#fff"></i>
+            </button>
+          </div>
+        </div>
+      </section>
+    </sc-if>
+
+    <!-- ══ REPORT ══ -->
+    <sc-if value="{{ si.report }}" hint-placeholder-val="{{ false }}">
+      <section class="sin" style="display:flex;flex-direction:column;width:100%;height:100%;background:var(--c-bg)">
+        <header style="padding:12px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--c-bd)">
+          <button onClick="{{ go.post }}" style="width:36px;height:36px;border-radius:100px;background:var(--c-sf);display:flex;align-items:center;justify-content:center;border:none;cursor:pointer">
+            <i data-lucide="x" style="width:15px;height:15px"></i>
+          </button>
+          <span class="serif" style="font-size:20px;color:var(--c-tx)">Signaler</span>
+        </header>
+        <div class="no-scrollbar" style="flex:1;overflow-y:auto;padding:20px 16px 20px">
+          <p style="font-size:14px;font-weight:600;color:var(--c-tx);margin:0">Pourquoi signalez-vous ce contenu ?</p>
+          <p style="font-size:12px;color:var(--c-tx3);margin:5px 0 0;line-height:1.6">Votre signalement est anonyme. Notre équipe examinera le contenu sous 24h.</p>
+          <div style="margin-top:18px;border-radius:19px;background:var(--c-sf);border:1px solid var(--c-bd);overflow:hidden">
+            <sc-for list="{{ reportReasons }}" as="r" hint-placeholder-count="4">
+              <button style="width:100%;padding:15px 16px;display:flex;align-items:center;justify-content:space-between;background:none;border:none;border-bottom:1px solid var(--c-bd);cursor:pointer;text-align:left;font-family:inherit">
+                <span style="font-size:14px;color:var(--c-tx)">{{ r.label }}</span>
+                <i data-lucide="chevron-right" style="width:15px;height:15px;color:var(--c-tx3)"></i>
+              </button>
+            </sc-for>
+          </div>
+          <div style="margin-top:18px;padding:13px;border-radius:16px;background:var(--c-ac2);border:1px solid rgba(37,99,235,.15)">
+            <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px">
+              <i data-lucide="info" style="width:14px;height:14px;color:var(--c-ac)"></i>
+              <span style="font-size:12px;font-weight:600;color:var(--c-ac)">En cas de danger immédiat</span>
+            </div>
+            <p style="font-size:11px;color:var(--c-tx2);margin:0;line-height:1.55">Contactez directement les services d'urgence (15, 17, 18). Nous ne pouvons pas intervenir en temps réel.</p>
+          </div>
+        </div>
+        <div style="padding:14px 16px;border-top:1px solid var(--c-bd)">
+          <button onClick="{{ go.feed }}" style="width:100%;height:50px;border-radius:19px;background:var(--c-err);color:#fff;font-size:14px;font-weight:600;border:none;cursor:pointer;font-family:inherit">Soumettre le signalement</button>
+        </div>
+      </section>
+    </sc-if>
+
+    <!-- ══ MODERATION ══ -->
+    <sc-if value="{{ si.moderation }}" hint-placeholder-val="{{ false }}">
+      <section class="sin" style="display:flex;flex-direction:column;width:100%;height:100%;background:var(--c-bg)">
+        <header style="padding:10px 14px;display:flex;align-items:center;gap:9px;border-bottom:1px solid var(--c-bd);background:var(--c-gl);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);flex-shrink:0">
+          <button onClick="{{ go.settings }}" style="width:36px;height:36px;border-radius:100px;background:none;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer"><i data-lucide="chevron-left" style="width:20px;height:20px;color:var(--c-tx)"></i></button>
+          <span class="serif" style="font-size:20px;color:var(--c-tx)">Modération</span>
+          <span style="padding:2px 8px;border-radius:100px;background:var(--c-err);color:#fff;font-size:9px;font-weight:700;letter-spacing:.05em">ADMIN</span>
+        </header>
+        <!-- stats -->
+        <div style="padding:12px 14px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;flex-shrink:0">
+          <div style="padding:12px;border-radius:16px;background:var(--c-sf);border:1px solid var(--c-bd);text-align:center">
+            <div style="font-size:22px;font-weight:800;color:var(--c-err)">3</div>
+            <div style="font-size:10px;color:var(--c-tx3)">Signalements</div>
+          </div>
+          <div style="padding:12px;border-radius:16px;background:var(--c-sf);border:1px solid var(--c-bd);text-align:center">
+            <div style="font-size:22px;font-weight:800;color:var(--c-ac)">1</div>
+            <div style="font-size:10px;color:var(--c-tx3)">Suspendus</div>
+          </div>
+          <div style="padding:12px;border-radius:16px;background:var(--c-sf);border:1px solid var(--c-bd);text-align:center">
+            <div style="font-size:22px;font-weight:800;color:var(--c-ok)">2 847</div>
+            <div style="font-size:10px;color:var(--c-tx3)">Actifs</div>
+          </div>
+        </div>
+        <!-- tabs -->
+        <div style="padding:0 14px;display:flex;border-bottom:1px solid var(--c-bd)">
+          <button onClick="{{ go.moderation }}" style="padding:9px 13px;font-size:13px;font-weight:600;color:var(--c-tx);background:none;border:none;cursor:pointer;border-bottom:2px solid var(--c-tx);margin-bottom:-1px;font-family:inherit">Signalements</button>
+          <button style="padding:9px 13px;font-size:13px;color:var(--c-tx3);background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;font-family:inherit">Utilisateurs</button>
+        </div>
+        <div class="no-scrollbar" style="flex:1;overflow-y:auto;padding:12px 14px 20px;display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ modReports }}" as="rep" hint-placeholder-count="3">
+            <div style="border-radius:18px;background:var(--c-sf);border:1px solid var(--c-bd);padding:13px;overflow:hidden">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                <div style="display:flex;align-items:center;gap:7px">
+                  <span style="font-size:12px;font-weight:600;color:var(--c-tx)">@{{ rep.user }}</span>
+                  <span style="{{ rep.badgeStyle }}">{{ rep.statusLabel }}</span>
+                </div>
+                <span style="font-size:11px;color:var(--c-tx3)">{{ rep.time }}</span>
+              </div>
+              <div style="font-size:11px;font-weight:600;color:var(--c-ac);margin-bottom:5px">{{ rep.reason }}</div>
+              <div style="font-size:12px;color:var(--c-tx2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:8px 10px;background:var(--c-in);border-radius:10px">{{ rep.content }}</div>
+              <div style="display:flex;gap:7px;margin-top:11px">
+                <button style="flex:1;height:34px;border-radius:11px;background:rgba(62,124,90,.15);color:var(--c-ok);font-size:12px;font-weight:500;border:none;cursor:pointer;font-family:inherit">Ignorer</button>
+                <button style="flex:1;height:34px;border-radius:11px;background:rgba(220,38,38,.12);color:var(--c-err);font-size:12px;font-weight:500;border:none;cursor:pointer;font-family:inherit">Supprimer</button>
+                <button style="flex:1;height:34px;border-radius:11px;background:var(--c-sf2);color:var(--c-tx);font-size:12px;font-weight:500;border:1px solid var(--c-bd2);cursor:pointer;font-family:inherit">Bannir</button>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+    </sc-if>
+
+  </div><!-- /screens -->
+
+  <!-- BOTTOM NAV -->
+  <sc-if value="{{ showNav }}" hint-placeholder-val="{{ false }}">
+    <nav style="position:absolute;bottom:0;left:0;right:0;z-index:30;padding:0 10px 10px">
+      <div style="border-radius:24px;background:var(--c-nav);padding:7px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 8px 32px rgba(0,0,0,.3),0 2px 8px rgba(0,0,0,.18)">
+        <button onClick="{{ go.feed }}" style="{{ nb.feed }}">
+          <i data-lucide="home" style="{{ nb.feedIcon }}"></i>
+          <span style="{{ nb.feedTxt }}">Accueil</span>
+        </button>
+        <button onClick="{{ go.search }}" style="{{ nb.search }}">
+          <i data-lucide="compass" style="{{ nb.searchIcon }}"></i>
+          <span style="{{ nb.searchTxt }}">Explorer</span>
+        </button>
+        <button onClick="{{ go.compose }}" style="flex:1;display:flex;align-items:center;justify-content:center;background:none;border:none;cursor:pointer;padding:0">
+          <span style="width:46px;height:46px;border-radius:17px;background:var(--c-ac);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(37,99,235,.45)">
+            <i data-lucide="plus" style="width:22px;height:22px;color:#fff"></i>
+          </span>
+        </button>
+        <button onClick="{{ go.notifs }}" style="{{ nb.notifs }};position:relative">
+          <i data-lucide="bell" style="{{ nb.notifsIcon }}"></i>
+          <span style="{{ nb.notifsTxt }}">Activité</span>
+          <span style="position:absolute;top:8px;right:16px;width:7px;height:7px;border-radius:100px;background:var(--c-ac);border:1.5px solid var(--c-nav)"></span>
+        </button>
+        <button onClick="{{ go.profile }}" style="{{ nb.profile }}">
+          <i data-lucide="user" style="{{ nb.profileIcon }}"></i>
+          <span style="{{ nb.profileTxt }}">Profil</span>
+        </button>
+      </div>
+    </nav>
+  </sc-if>
+
+  <!-- Home indicator -->
+  <div class="donly" style="position:absolute;bottom:4px;left:50%;transform:translateX(-50%);width:120px;height:4px;border-radius:100px;background:var(--c-bd2);pointer-events:none"></div>
+
+</div><!-- /phone -->
+
+<!-- RIGHT SIDEBAR -->
+<aside class="donly" style="width:220px;padding-top:28px;flex-shrink:0">
+  <div style="border-radius:22px;background:white;border:1px solid rgba(0,0,0,.08);padding:18px">
+    <div style="font-family:'Instrument Serif',serif;font-size:18px;margin-bottom:12px;color:#111">Nouveautés v0.2</div>
+    <ul style="font-size:12px;color:#555;list-style:none;padding:0;margin:0;line-height:2.1">
+      <li>🌙 Dark mode (Réglages)</li>
+      <li>💎 Accent saphir</li>
+      <li>🌡️ Dark brun chaud</li>
+      <li>🧭 Explore masonry</li>
+      <li>🔔 Notifs enrichies</li>
+      <li>🌟 Story player</li>
+      <li>🚩 Signalement Fx20</li>
+      <li>🛡️ Panel admin</li>
+      <li>🎯 Onboarding intérêts</li>
+      <li>✨ Animations sin/hpop</li>
+    </ul>
+  </div>
+  <div style="border-radius:22px;background:white;border:1px solid rgba(0,0,0,.08);padding:18px;margin-top:14px">
+    <div style="font-family:'Instrument Serif',serif;font-size:18px;margin-bottom:8px;color:#111">Navigation</div>
+    <p style="font-size:12px;color:#666;line-height:1.7;margin:0">Sidebar gauche → jump<br/>Nav bas → feed, explore…<br/>Post → Signaler<br/>Profil → Réglages → Dark</p>
+  </div>
+</aside>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    screen: 'onboarding',
+    dark: false,
+    interests: [],
+    liked: {},
+    saved: {},
+    storyIdx: 0,
+  };
+
+  componentDidMount() { this._icons(); }
+  componentDidUpdate() { this._icons(); }
+  _icons() { if (window.lucide) window.lucide.createIcons(); }
+
+  renderVals() {
+    const { screen, dark, liked, saved, interests, storyIdx } = this.state;
+
+    // ── Navigation ──
+    const screens = ['onboarding','login','signup','interests','feed','search','compose','notifs','messages','thread','profile','post','settings','story','report','moderation'];
+    const go = {};
+    screens.forEach(s => { go[s] = () => this.setState({ screen: s }); });
+
+    // ── Theme ──
+    const themeAttr = dark ? 'dark' : 'light';
+    const toggleDark = () => this.setState(st => ({ dark: !st.dark }));
+    const setLight = () => this.setState({ dark: false });
+    const setDark  = () => this.setState({ dark: true  });
+
+    const toggleStyle = {
+      width: 50, height: 28, borderRadius: 100, border: 'none', cursor: 'pointer', position: 'relative',
+      background: dark ? 'var(--c-ac)' : 'var(--c-bd2)', transition: 'background .25s',
+    };
+    const toggleKnobStyle = {
+      position: 'absolute', top: 3, width: 22, height: 22, borderRadius: 100,
+      background: '#fff', boxShadow: '0 1px 4px rgba(0,0,0,.22)', transition: 'left .22s',
+      left: dark ? 25 : 3,
+    };
+    const lightBtnStyle = `padding:7px 13px;border-radius:11px;background:${!dark ? 'var(--c-tx)' : 'var(--c-in)'};color:${!dark ? 'var(--c-bg)' : 'var(--c-tx2)'};font-size:12px;font-weight:500;border:none;cursor:pointer;display:flex;align-items:center;gap:5px;font-family:inherit`;
+    const darkBtnStyle  = `padding:7px 13px;border-radius:11px;background:${dark  ? 'var(--c-tx)' : 'var(--c-in)'};color:${dark  ? 'var(--c-bg)' : 'var(--c-tx2)'};font-size:12px;font-weight:500;border:none;cursor:pointer;display:flex;align-items:center;gap:5px;font-family:inherit`;
+    const darkIcon  = dark ? 'moon' : 'sun';
+    const darkLabel = dark ? 'Mode sombre' : 'Mode clair';
+    const darkSub   = dark ? 'Thème brun chaud' : 'Thème papier';
+
+    // ── Posts ──
+    const rawPosts = [
+      { id:1, user:'Margaux', handle:'mgx', avI:'M', avC:'var(--av1)', time:'2h', kind:'text',    body:'Hier soir, le ciel était <em>parfait</em> — la couleur exacte d\'un vieux papier journal.', likes:248, comments:32,  reposts:14 },
+      { id:2, user:'Jules',   handle:'jules', avI:'J', avC:'var(--av2)', time:'4h', kind:'gallery', body:'Petits essais d\'aquarelle ce matin. Le bleu m\'échappe encore.',  likes:512, comments:84,  reposts:21, images:['linear-gradient(135deg,#4B87F5,#1E3A5F)','linear-gradient(135deg,#E5E2D8,#C2BFB2)','linear-gradient(135deg,#3E7C5A,#0F3D28)'] },
+      { id:3, user:'Ada',     handle:'ada',   avI:'A', avC:'var(--c-tx)', time:'6h', kind:'quote',   body:'« On ne pense pas en marchant — on pense parce qu\'on a marché. »', cite:'Frédéric Gros', likes:131, comments:9,   reposts:18 },
+      { id:4, user:'Inès',    handle:'ines',  avI:'I', avC:'var(--av3)', time:'9h', kind:'image',   body:'Atelier ouvert tout le week‑end — passez si vous êtes dans le coin.', likes:84, comments:11, reposts:3,  image:'linear-gradient(135deg,#7C3AED,#2563EB)' },
+      { id:5, user:'Sami',    handle:'sami',  avI:'S', avC:'var(--av4)', time:'12h', kind:'text',   body:'Question naïve du jour : pourquoi le bon design semble toujours évident seulement après ?', likes:329, comments:47, reposts:22 },
+    ];
+
+    const posts = rawPosts.map(p => {
+      const isLiked = !!liked[p.id];
+      const isSaved = !!saved[p.id];
+      return {
+        ...p,
+        isText:    p.kind === 'text',
+        isImage:   p.kind === 'image',
+        isGallery: p.kind === 'gallery',
+        isQuote:   p.kind === 'quote',
+        img0: p.images ? p.images[0] : '',
+        img1: p.images ? p.images[1] : '',
+        img2: p.images ? p.images[2] : '',
+        bodyHtml: { __html: p.body },
+        likeCount: p.likes + (isLiked ? 1 : 0),
+        onLike: (e) => { e.stopPropagation(); this.setState(st => ({ liked: { ...st.liked, [p.id]: !st.liked[p.id] } })); },
+        onSave: (e) => { e.stopPropagation(); this.setState(st => ({ saved: { ...st.saved, [p.id]: !st.saved[p.id] } })); },
+        stopProp: (e) => e.stopPropagation(),
+        likeStyle: `display:flex;align-items:center;gap:5px;font-size:13px;color:${isLiked ? 'var(--c-err)' : 'var(--c-tx3)'};background:none;border:none;cursor:pointer;padding:0;font-family:inherit`,
+        likeIconStyle: { width:15, height:15, fill: isLiked ? 'var(--c-err)' : 'none', stroke: isLiked ? 'var(--c-err)' : 'var(--c-tx3)' },
+        saveStyle: `background:none;border:none;cursor:pointer;padding:0`,
+        saveIconStyle: { width:16, height:16, fill: isSaved ? 'var(--c-ac)' : 'none', stroke: isSaved ? 'var(--c-ac)' : 'var(--c-tx3)' },
+      };
+    });
+
+    // ── Stories ──
+    const stories = [
+      { n:'Margaux', g:'linear-gradient(135deg,#4B87F5,#1E3A5F)' },
+      { n:'Jules',   g:'linear-gradient(135deg,#3E7C5A,#0F3D28)' },
+      { n:'Inès',    g:'linear-gradient(135deg,#7C3AED,#2563EB)' },
+      { n:'Sami',    g:'linear-gradient(135deg,#B45309,#7C2D12)' },
+      { n:'Léa',     g:'linear-gradient(135deg,#0F766E,#2563EB)' },
+      { n:'Tom',     g:'linear-gradient(135deg,#4B87F5,#7C3AED)' },
+    ];
+
+    // ── Story player ──
+    const curStory = stories[storyIdx] || stories[0];
+    const storyBars = stories.map((s, i) => ({
+      ...s,
+      w: i < storyIdx ? '100%' : i === storyIdx ? '55%' : '0%',
+    }));
+    const prevStory = () => this.setState(st => ({ storyIdx: Math.max(0, st.storyIdx - 1) }));
+    const nextStory = () => this.setState(st => ({ storyIdx: Math.min(stories.length - 1, st.storyIdx + 1) }));
+
+    // ── Notifications ──
+    const rawNotifs = [
+      { avI:'M', avC:'var(--av1)', ic:'heart',          icBg:'var(--c-err)', tx:'<b>Margaux</b> a aimé ta note',                  sub:'« Hier soir, le ciel… »', time:'2h',  today:true },
+      { avI:'J', avC:'var(--av2)', ic:'user-plus',       icBg:'var(--c-ac)',  tx:'<b>Jules</b> et 2 autres te suivent',             sub:'voir tous',               time:'3h',  today:true },
+      { avI:'I', avC:'var(--av3)', ic:'message-circle',  icBg:'var(--c-ok)',  tx:'<b>Inès</b> a répondu à ta note',                 sub:'« joli papier ! »',       time:'5h',  today:true },
+      { avI:'S', avC:'var(--av4)', ic:'at-sign',         icBg:'var(--c-ac)',  tx:'<b>Sami</b> t\'a mentionnée',                     sub:'dans un fil',             time:'8h',  today:true },
+      { avI:'L', avC:'var(--av2)', ic:'repeat-2',        icBg:'var(--c-ok)',  tx:'<b>Léa</b> a repartagé ta note',                  sub:'« Question naïve… »',     time:'mar', today:false },
+      { avI:'T', avC:'var(--av4)', ic:'bookmark',        icBg:'var(--c-ac)',  tx:'<b>Tom</b> a marqué ta note',                     sub:'ajout aux favoris',       time:'lun', today:false },
+      { avI:'d', avC:'var(--c-tx)',ic:'sparkles',        icBg:'#F59E0B',      tx:'Ton carnet passe les <b>1 000 abonnés</b>',        sub:'félicitations 🎉',        time:'dim', today:false },
+    ];
+    const addHtml = n => ({ ...n, txHtml: { __html: n.tx } });
+    const notifsToday = rawNotifs.filter(n => n.today).map(addHtml);
+    const notifsWeek  = rawNotifs.filter(n => !n.today).map(addHtml);
+
+    // ── Threads ──
+    const threads = [
+      { n:'Margaux', avI:'M', avC:'var(--av1)', last:'On se voit ce soir ? 19h ?',          time:'09:02', unread:2, online:true  },
+      { n:'Jules',   avI:'J', avC:'var(--av2)', last:'Je t\'envoie le fichier demain.',     time:'hier',  unread:0, online:false },
+      { n:'Inès',    avI:'I', avC:'var(--av3)', last:'Vu pour le papier 🙌',                time:'hier',  unread:0, online:false },
+      { n:'Atelier', avI:'A', avC:'var(--c-tx)',last:'Sami : "j\'arrive en retard"',        time:'lun',   unread:5, online:false },
+      { n:'Tom',     avI:'T', avC:'var(--av4)', last:'Merci !',                             time:'dim',   unread:0, online:false },
+    ].map(t => ({ ...t, hasUnread: t.unread > 0 }));
+
+    // ── Explore cells ──
+    const cells = [
+      { g:'linear-gradient(135deg,#4B87F5,#1E3A5F)', h:120, label:'Design',    hasLabel:true  },
+      { g:'linear-gradient(135deg,#7C3AED,#2563EB)', h:160, label:'',          hasLabel:false },
+      { g:'linear-gradient(135deg,#3E7C5A,#0F3D28)', h:104, label:'Nature',    hasLabel:true  },
+      { g:'linear-gradient(135deg,#B45309,#7C2D12)', h:178, label:'',          hasLabel:false },
+      { g:'linear-gradient(135deg,#E5E2D8,#C2BFB2)', h:130, label:'Minimalisme', hasLabel:true },
+      { g:'linear-gradient(135deg,#4B87F5,#7C3AED)', h:112, label:'',          hasLabel:false },
+      { g:'linear-gradient(135deg,#0F766E,#2563EB)', h:148, label:'Voyages',   hasLabel:true  },
+      { g:'linear-gradient(135deg,#B45309,#4B87F5)', h:124, label:'',          hasLabel:false },
+      { g:'linear-gradient(135deg,#1E3A5F,#0F3D28)', h:140, label:'Cinéma',    hasLabel:true  },
+    ];
+
+    // ── Interests ──
+    const interestList = [
+      { id:'design',   label:'Design',      ic:'pen-tool'   },
+      { id:'lecture',  label:'Lecture',     ic:'book-open'  },
+      { id:'musique',  label:'Musique',     ic:'music-2'    },
+      { id:'photo',    label:'Photo',       ic:'camera'     },
+      { id:'cinema',   label:'Cinéma',      ic:'film'       },
+      { id:'voyage',   label:'Voyage',      ic:'map-pin'    },
+      { id:'tech',     label:'Tech',        ic:'cpu'        },
+      { id:'art',      label:'Art',         ic:'palette'    },
+      { id:'cuisine',  label:'Cuisine',     ic:'utensils'   },
+      { id:'ecriture', label:'Écriture',    ic:'feather'    },
+      { id:'sport',    label:'Sport',       ic:'activity'   },
+      { id:'nature',   label:'Nature',      ic:'leaf'       },
+    ];
+    const chips = interestList.map(i => {
+      const sel = interests.includes(i.id);
+      return {
+        ...i,
+        toggle: () => this.setState(st => {
+          const arr = st.interests;
+          return { interests: sel ? arr.filter(x => x !== i.id) : [...arr, i.id] };
+        }),
+        btnStyle: `display:flex;align-items:center;gap:6px;padding:9px 15px;border-radius:100px;background:${sel ? 'var(--c-ac)' : 'var(--c-sf)'};color:${sel ? '#fff' : 'var(--c-tx2)'};border:${sel ? 'none' : '1px solid var(--c-bd2)'};font-size:13px;font-weight:${sel ? '600' : '400'};cursor:pointer;font-family:inherit`,
+      };
+    });
+    const interestsCount = interests.length;
+    const ctaLabel = interestsCount >= 3 ? `Commencer · ${interestsCount} sujets` : 'Sélectionne au moins 3 sujets';
+    const ctaStyle = `width:100%;height:50px;border-radius:19px;background:${interestsCount >= 3 ? 'var(--c-ac)' : 'var(--c-sf2)'};color:${interestsCount >= 3 ? '#fff' : 'var(--c-tx3)'};font-size:14px;font-weight:600;border:none;cursor:${interestsCount >= 3 ? 'pointer' : 'default'};font-family:inherit`;
+
+    // ── Report reasons ──
+    const reportReasons = [
+      { label:'Harcèlement ou intimidation' },
+      { label:'Discours haineux' },
+      { label:'Spam ou contenu trompeur' },
+      { label:'Violence ou contenu choquant' },
+      { label:'Autre raison' },
+    ];
+
+    // ── Mod reports ──
+    const modReports = [
+      { user:'user_123',    reason:'Spam',               content:'Achetez maintenant, offre limitée...',      time:'10min', status:'pending'  },
+      { user:'testaccount', reason:'Harcèlement',        content:'Tu vas voir ce qui t\'attend...',           time:'1h',    status:'pending'  },
+      { user:'fake_news44', reason:'Contenu trompeur',   content:'URGENT ! Ce médicament guérit tout...',     time:'3h',    status:'reviewed' },
+    ].map(r => ({
+      ...r,
+      isPending: r.status === 'pending',
+      statusLabel: r.status === 'pending' ? 'En attente' : 'Examiné',
+      badgeStyle: `padding:2px 8px;border-radius:100px;background:${r.status === 'pending' ? 'rgba(220,38,38,.12)' : 'var(--c-tag)'};color:${r.status === 'pending' ? 'var(--c-err)' : 'var(--c-tx3)'};font-size:10px;font-weight:500`,
+    }));
+
+    // ── Nav active states ──
+    const navScreens = ['feed','search','notifs','messages','profile'];
+    const showNav = navScreens.includes(screen);
+    const nb = {};
+    ['feed','search','notifs','profile'].forEach(s => {
+      const on = screen === s;
+      nb[s]        = `flex:1;height:46px;border-radius:17px;background:${on ? 'rgba(255,255,255,.11)' : 'transparent'};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:none;cursor:pointer;padding:0`;
+      nb[s+'Icon'] = { width:19, height:19, color: on ? '#fff' : 'rgba(255,255,255,.48)' };
+      nb[s+'Txt']  = `font-size:9px;color:${on ? '#fff' : 'rgba(255,255,255,.4)'}`;
+    });
+
+    // ── Screen index ──
+    const si = {};
+    screens.forEach(s => { si[s] = screen === s; });
+
+    return {
+      themeAttr, dark,
+      go, toggleDark, setLight, setDark,
+      toggleStyle, toggleKnobStyle,
+      lightBtnStyle, darkBtnStyle,
+      darkIcon, darkLabel, darkSub,
+      posts, stories, storyBars, curStory, prevStory, nextStory,
+      notifsToday, notifsWeek,
+      threads,
+      cells,
+      chips, interestsCount, ctaLabel, ctaStyle,
+      reportReasons,
+      modReports,
+      showNav, nb, si,
+      screen,
+    };
+  }
+}
+</script>
+</body>
+</html>

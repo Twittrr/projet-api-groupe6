@@ -1,0 +1,84 @@
+/**
+ * @file api.ts
+ * @brief Client HTTP Axios partagé : injection du JWT et rafraîchissement silencieux.
+ *
+ * Le jeton d'accès est conservé en mémoire (et non en localStorage) pour limiter
+ * l'exposition au XSS ; le refresh token vit dans un cookie HttpOnly géré par le
+ * service Auth.
+ */
+import axios, { AxiosError, AxiosRequestConfig } from 'axios';
+
+// URL relative par défaut : le frontend et l'API partagent l'origine du gateway,
+// ce qui fonctionne quel que soit l'hôte (localhost, IP LAN, domaine…).
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
+
+// Jeton d'accès conservé en mémoire (jamais en localStorage : limite l'exposition au XSS).
+// Le refresh token vit dans un cookie HttpOnly géré par le service Auth.
+let accessToken: string | null = null;
+/** @brief Définit le jeton d'accès courant (null pour déconnecter). */
+export const setAccessToken = (t: string | null) => { accessToken = t; };
+/** @brief Retourne le jeton d'accès courant. */
+export const getAccessToken = () => accessToken;
+
+export const api = axios.create({
+  baseURL: API_URL,
+  withCredentials: true, // envoi du cookie de refresh
+});
+
+// Injecte le Bearer token sur chaque requête
+api.interceptors.request.use((config) => {
+  if (accessToken) {
+    config.headers.Authorization = `Bearer ${accessToken}`;
+  }
+  return config;
+});
+
+// Rejoue une requête 401 après rafraîchissement silencieux du token
+let refreshing: Promise<string | null> | null = null;
+
+/**
+ * @brief Demande un nouveau jeton d'accès via le cookie de refresh.
+ * @returns Le nouveau jeton, ou null si la session ne peut être restaurée.
+ */
+async function refreshAccessToken(): Promise<string | null> {
+  try {
+    const res = await axios.post(`${API_URL}/auth/refresh`, {}, { withCredentials: true });
+    const token = res.data?.data?.accessToken ?? null;
+    setAccessToken(token);
+    return token;
+  } catch {
+    setAccessToken(null);
+    return null;
+  }
+}
+
+api.interceptors.response.use(
+  (res) => res,
+  async (error: AxiosError) => {
+    const original = error.config as AxiosRequestConfig & { _retry?: boolean };
+    const isAuthRoute = original?.url?.includes('/auth/login') || original?.url?.includes('/auth/refresh');
+    if (error.response?.status === 401 && !original._retry && !isAuthRoute) {
+      original._retry = true;
+      refreshing = refreshing || refreshAccessToken();
+      const token = await refreshing;
+      refreshing = null;
+      if (token) {
+        original.headers = original.headers || {};
+        (original.headers as Record<string, string>).Authorization = `Bearer ${token}`;
+        return api(original);
+      }
+    }
+    throw error;
+  }
+);
+
+/**
+ * @brief Extrait un message d'erreur lisible depuis l'enveloppe `{ error }` de l'API.
+ * @param err Erreur capturée (typiquement une AxiosError).
+ * @param fallback Message par défaut si aucun message structuré n'est disponible.
+ * @returns Le message à présenter à l'utilisateur.
+ */
+export function apiError(err: unknown, fallback = 'Une erreur est survenue.'): string {
+  const e = err as AxiosError<{ error?: { message?: string } }>;
+  return e?.response?.data?.error?.message || fallback;
+}

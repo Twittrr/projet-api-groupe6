@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  # -----------------------------------------------------------
+  # Lint + build des microservices (matrice)
+  # -----------------------------------------------------------
+  services:
+    name: Service — ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [auth, users, posts, notifications]
+    defaults:
+      run:
+        working-directory: services/${{ matrix.service }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install
+        run: npm install
+      - name: Vérification syntaxe (node --check)
+        run: |
+          for f in $(find src -name '*.js'); do node --check "$f"; done
+      - name: Tests
+        run: npm test --if-present
+
+  # -----------------------------------------------------------
+  # Lint + build du frontend
+  # -----------------------------------------------------------
+  frontend:
+    name: Frontend — lint & build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+      - run: npm run lint
+      - run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8080/api
+
+  # -----------------------------------------------------------
+  # Build des images Docker (vérifie que tout se construit)
+  # -----------------------------------------------------------
+  docker-build:
+    name: Build images Docker
+    runs-on: ubuntu-latest
+    needs: [services, frontend]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Copier .env d'exemple
+        run: cp .env.example .env
+      - name: docker compose build
+        run: docker compose build

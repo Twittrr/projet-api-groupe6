@@ -33,6 +33,7 @@ router.get('/:id/following', ah(ctrl.listFollowing));
 
 // Modération (Fx21)
 router.patch('/:id/status', authenticate, requireRole('moderator', 'admin'), validate(moderateStatusSchema), ah(ctrl.moderateStatus));
+router.get('/banned', authenticate, requireRole('moderator', 'admin'), ah(ctrl.listBanned));
 
 // Profil public par username (en dernier : route la plus générique)
 router.get('/:username', optionalAuth, ah(ctrl.getProfile));

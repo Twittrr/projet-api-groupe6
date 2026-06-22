@@ -87,7 +87,7 @@ function ConnectionsContent() {
           <div key={u.id} className="flex items-center gap-3 px-4 py-3">
             <button
               onClick={() => router.push(`/profile/${u.username}`)}
-              className="flex flex-1 items-center gap-3 text-left"
+              className="flex min-w-0 flex-1 items-center gap-3 text-left"
             >
               <Avatar username={u.username} size={44} />
               <div className="min-w-0 flex-1">

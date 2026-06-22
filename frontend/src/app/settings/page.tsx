@@ -62,7 +62,7 @@ export default function SettingsPage() {
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-[600px] flex-col border-x border-bd">
       <AppHeader title={t('settings.title')} back />
-      <main className="flex-1 space-y-6 p-4">
+      <main className="flex-1 space-y-6 p-4 pb-24 lg:pb-4">
 
         {/* Apparence — Fx23 */}
         <section className="rounded-xl3 border border-bd bg-sf p-4">

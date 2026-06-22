@@ -162,6 +162,15 @@ export async function suggestions(req, res) {
   return ok(res, { users: users.map((u) => publicUser(u)) });
 }
 
+/** @brief Fx21 — Liste tous les utilisateurs bannis (mod/admin). */
+export async function listBanned(req, res) {
+  const users = await User.findAll({
+    where: { status: 'banned' },
+    order: [['updatedAt', 'DESC']],
+  });
+  return ok(res, { users: users.map((u) => publicUser(u)) });
+}
+
 /** @brief Fx21 — Modère un compte (suspend/ban/réactive). Un admin ne peut être modéré. */
 export async function moderateStatus(req, res) {
   const { status } = req.body;

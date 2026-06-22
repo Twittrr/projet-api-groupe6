@@ -18,6 +18,21 @@ import { useT } from '@/lib/useT';
 import { timeAgo, mediaUrl, isGradient } from '@/lib/helpers';
 import type { Post, Media } from '@/lib/types';
 
+/** Rend le texte avec les @mentions en orange ; surbrillance si c'est le lecteur actuel. */
+function parseContent(text: string, currentUsername?: string): React.ReactNode {
+  let pos = 0;
+  return text.split(/(@\w+)/g).map((part) => {
+    const key = `c${pos}`;
+    pos += part.length;
+    if (/^@\w+$/.test(part)) {
+      const isMe = !!currentUsername && part.toLowerCase() === `@${currentUsername.toLowerCase()}`;
+      const cls = isMe ? 'font-semibold text-ac rounded bg-ac/10 px-0.5' : 'font-semibold text-ac';
+      return <span key={key} className={cls}>{part}</span>;
+    }
+    return <span key={key}>{part}</span>;
+  });
+}
+
 function mediaStyle(url: string): React.CSSProperties {
   if (isGradient(url)) return { background: url };
   const resolved = mediaUrl(url);
@@ -120,10 +135,10 @@ export default function PostCard({ post: initial }: Readonly<{ post: Post }>) {
         </div>
 
         {isTextOnly ? (
-          <p className="serif mt-2.5 text-[19px] leading-[1.45] text-tx">{post.content}</p>
+          <p className="serif mt-2.5 text-[19px] leading-[1.45] text-tx">{parseContent(post.content, user?.username)}</p>
         ) : (
           <>
-            <p className="mt-2.5 text-[13px] leading-[1.55] text-tx2">{post.content}</p>
+            <p className="mt-2.5 text-[13px] leading-[1.55] text-tx2">{parseContent(post.content, user?.username)}</p>
             <MediaBlock media={post.media} />
           </>
         )}

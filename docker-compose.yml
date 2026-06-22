@@ -187,6 +187,7 @@ services:
     env_file: .env
     environment:
       PORT: ${FRONTEND_PORT}
+      GATEWAY_URL: http://gateway
     depends_on: [auth, users, posts, notifications, conversations]
     networks: [breezy-net]
     deploy:

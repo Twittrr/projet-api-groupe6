@@ -33,7 +33,7 @@ function ReportForm() {
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-[600px] flex-col border-x border-bd">
       <AppHeader title="Signaler" back />
-      <main className="flex-1 p-4">
+      <main className="flex-1 p-4 pb-24 lg:pb-4">
         {done ? (
           <p className="py-16 text-center text-ok">Merci, votre signalement a été transmis à la modération.</p>
         ) : (

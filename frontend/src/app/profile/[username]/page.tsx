@@ -6,7 +6,7 @@
  */
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { X } from 'lucide-react';
+import { X, Settings, Shield, MessageSquare, ShieldOff, ShieldCheck } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/store/auth';
 import { useT } from '@/lib/useT';
@@ -92,6 +92,8 @@ export default function ProfilePage() {
   const [following, setFollowing] = useState(false);
   const [followModal, setFollowModal] = useState<FollowModal>(null);
   const [notFound, setNotFound] = useState(false);
+  const [dmLoading, setDmLoading] = useState(false);
+  const [banLoading, setBanLoading] = useState(false);
 
   useEffect(() => {
     if (!username) return;
@@ -119,6 +121,30 @@ export default function ProfilePage() {
     }
   }
 
+  async function sendMessage() {
+    if (!me) return router.push('/login');
+    if (!profile) return;
+    setDmLoading(true);
+    try {
+      const r = await api.post('/conversations', { participantIds: [profile.id] });
+      router.push(`/messages/${r.data.data.conversation._id as string}`);
+    } finally {
+      setDmLoading(false);
+    }
+  }
+
+  async function toggleBan() {
+    if (!profile) return;
+    const next = profile.status === 'banned' ? 'active' : 'banned';
+    setBanLoading(true);
+    try {
+      await api.patch(`/users/${profile.id}/status`, { status: next });
+      setProfile((p) => p && { ...p, status: next });
+    } finally {
+      setBanLoading(false);
+    }
+  }
+
   if (notFound) return (
     <AppShell>
       <div className="flex h-screen flex-col items-center justify-center gap-3 text-tx3">
@@ -139,25 +165,65 @@ export default function ProfilePage() {
           <div className="flex items-start justify-between">
             <Avatar username={profile.username} size={72} />
             {isMe ? (
-              <button onClick={() => router.push('/settings')} className="rounded-full border border-bd2 px-4 py-1.5 text-sm font-semibold text-tx">
-                {t('profile.edit')}
-              </button>
+              <div className="flex items-center gap-2">
+                <button onClick={() => router.push('/settings')} className="flex items-center gap-1.5 rounded-full border border-bd2 px-4 py-1.5 text-sm font-semibold text-tx">
+                  <Settings size={14} />
+                  {t('profile.edit')}
+                </button>
+                {(me?.role === 'admin' || me?.role === 'moderator') && (
+                  <button onClick={() => router.push('/moderation')} aria-label={t('nav.moderation')} className="flex h-9 w-9 items-center justify-center rounded-full border border-bd2 text-ac">
+                    <Shield size={16} />
+                  </button>
+                )}
+              </div>
             ) : (
-              <button
-                onClick={toggleFollow}
-                className={`rounded-full px-5 py-1.5 text-sm font-semibold ${following ? 'border border-bd2 text-tx' : 'bg-tx text-bg'}`}
-              >
-                {following ? t('profile.following') : t('profile.follow')}
-              </button>
+              <div className="flex items-center gap-2">
+                {(me?.role === 'admin' || me?.role === 'moderator') && (
+                  <button
+                    onClick={toggleBan}
+                    disabled={banLoading}
+                    aria-label={profile.status === 'banned' ? 'Débannir' : 'Bannir'}
+                    title={profile.status === 'banned' ? 'Débannir' : 'Bannir'}
+                    className={`flex h-9 w-9 items-center justify-center rounded-full border transition disabled:opacity-40 ${
+                      profile.status === 'banned'
+                        ? 'border-ok text-ok hover:bg-ok hover:text-white'
+                        : 'border-err text-err hover:bg-err hover:text-white'
+                    }`}
+                  >
+                    {profile.status === 'banned' ? <ShieldCheck size={15} /> : <ShieldOff size={15} />}
+                  </button>
+                )}
+                <button
+                  onClick={sendMessage}
+                  disabled={dmLoading}
+                  aria-label="Envoyer un message"
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-bd2 text-tx2 transition hover:border-ac hover:text-ac disabled:opacity-40"
+                >
+                  <MessageSquare size={16} />
+                </button>
+                <button
+                  onClick={toggleFollow}
+                  className={`rounded-full px-5 py-1.5 text-sm font-semibold ${following ? 'border border-bd2 text-tx' : 'bg-tx text-bg'}`}
+                >
+                  {following ? t('profile.following') : t('profile.follow')}
+                </button>
+              </div>
             )}
           </div>
           <h2 className="mt-3 text-xl font-bold text-tx">{profile.displayName}</h2>
           <p className="text-sm text-tx3">@{profile.username}</p>
-          {profile.role !== 'user' && (
-            <span className="mt-1 inline-block rounded-full bg-ac2 px-2 py-0.5 text-xs font-semibold text-ac">
-              {profile.role === 'admin' ? 'Administrateur' : 'Modérateur'}
-            </span>
-          )}
+          <div className="mt-1 flex flex-wrap gap-1.5">
+            {profile.role !== 'user' && (
+              <span className="inline-block rounded-full bg-ac2 px-2 py-0.5 text-xs font-semibold text-ac">
+                {profile.role === 'admin' ? 'Administrateur' : 'Modérateur'}
+              </span>
+            )}
+            {profile.status === 'banned' && (
+              <span className="inline-block rounded-full bg-err/10 px-2 py-0.5 text-xs font-semibold text-err">
+                Banni
+              </span>
+            )}
+          </div>
           {profile.bio && <p className="mt-2 text-sm text-tx2">{profile.bio}</p>}
 
           <div className="mt-3 flex gap-4 text-sm">

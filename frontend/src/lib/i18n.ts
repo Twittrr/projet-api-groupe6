@@ -76,6 +76,9 @@ const fr = {
   'settings.modQueue':    'File de modération',
   'settings.logout':      'Se déconnecter',
 
+  // Compose
+  'compose.published': 'Note publiée ✓',
+
   // Communs
   'common.loading': 'Chargement…',
   'common.cancel':  'Annuler',
@@ -158,6 +161,9 @@ const en: Record<keyof typeof fr, string> = {
   'settings.admin':       'Administration',
   'settings.modQueue':    'Moderation queue',
   'settings.logout':      'Sign out',
+
+  // Compose
+  'compose.published': 'Post published ✓',
 
   // Common
   'common.loading': 'Loading…',

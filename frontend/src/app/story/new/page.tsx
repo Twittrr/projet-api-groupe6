@@ -39,7 +39,7 @@ export default function NewStoryPage() {
   return (
     <div className="flex min-h-screen flex-col">
       <AppHeader title="Nouvelle story" back />
-      <main className="flex-1 p-4">
+      <main className="flex-1 p-4 pb-24 lg:pb-4">
         {/* Aperçu */}
         <div className="relative mx-auto flex aspect-[9/16] max-h-[60vh] w-full max-w-[280px] items-center justify-center rounded-3xl p-6" style={{ background: gradient }}>
           <p className="serif text-center text-2xl text-white drop-shadow">{text || 'Ton mot du jour…'}</p>

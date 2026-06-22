@@ -10,6 +10,7 @@ import { useEffect } from 'react';
 import { useAuth } from '@/store/auth';
 import { useTheme } from '@/store/theme';
 import BottomNav from './BottomNav';
+import Toaster from './Toaster';
 
 /**
  * @brief Enveloppe l'application ; applique le thème, restaure la session au montage,
@@ -28,6 +29,7 @@ export default function Providers({ children }: Readonly<{ children: React.React
     <>
       {children}
       <BottomNav />
+      <Toaster />
     </>
   );
 }

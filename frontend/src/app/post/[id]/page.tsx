@@ -87,7 +87,7 @@ export default function ThreadPage() {
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-[600px] flex-col border-x border-bd">
       <AppHeader title="Discussion" back />
-      <main className="flex-1 p-3">
+      <main className="flex-1 p-3 pb-20">
         {error && <p className="text-sm text-err">{error}</p>}
         {post && <PostCard post={post} />}
 
@@ -154,7 +154,7 @@ export default function ThreadPage() {
         </div>
       </main>
 
-      <footer className="sticky bottom-0 flex items-center gap-2 border-t border-bd bg-bg/95 p-3 backdrop-blur">
+      <footer className="sticky bottom-[76px] lg:bottom-0 flex items-center gap-2 border-t border-bd bg-bg/95 p-3 backdrop-blur">
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}

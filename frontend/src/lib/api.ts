@@ -15,8 +15,6 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 // Jeton d'accès conservé en mémoire (jamais en localStorage : limite l'exposition au XSS).
 // Le refresh token vit dans un cookie HttpOnly géré par le service Auth.
 let accessToken: string | null = null;
-/** @brief Définit le jeton d'accès courant (null pour déconnecter). */
-export const setAccessToken = (t: string | null) => { accessToken = t; };
 /** @brief Retourne le jeton d'accès courant. */
 export const getAccessToken = () => accessToken;
 
@@ -35,11 +33,17 @@ api.interceptors.request.use((config) => {
 
 // Rejoue une requête 401 après rafraîchissement silencieux du token
 let refreshing: Promise<string | null> | null = null;
+let sessionExpired = false;
 
-/**
- * @brief Demande un nouveau jeton d'accès via le cookie de refresh.
- * @returns Le nouveau jeton, ou null si la session ne peut être restaurée.
- */
+type RefreshFailedCallback = () => void;
+let onRefreshFailed: RefreshFailedCallback | null = null;
+export const setOnRefreshFailed = (cb: RefreshFailedCallback) => { onRefreshFailed = cb; };
+
+export const setAccessToken = (t: string | null) => {
+  accessToken = t;
+  if (t) sessionExpired = false;
+};
+
 async function refreshAccessToken(): Promise<string | null> {
   try {
     const res = await axios.post(`${API_URL}/auth/refresh`, {}, { withCredentials: true });
@@ -48,6 +52,8 @@ async function refreshAccessToken(): Promise<string | null> {
     return token;
   } catch {
     setAccessToken(null);
+    sessionExpired = true;
+    onRefreshFailed?.();
     return null;
   }
 }
@@ -57,7 +63,7 @@ api.interceptors.response.use(
   async (error: AxiosError) => {
     const original = error.config as AxiosRequestConfig & { _retry?: boolean };
     const isAuthRoute = original?.url?.includes('/auth/login') || original?.url?.includes('/auth/refresh');
-    if (error.response?.status === 401 && !original._retry && !isAuthRoute) {
+    if (error.response?.status === 401 && !original._retry && !isAuthRoute && !sessionExpired) {
       original._retry = true;
       refreshing = refreshing || refreshAccessToken();
       const token = await refreshing;

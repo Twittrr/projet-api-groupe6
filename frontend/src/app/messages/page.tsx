@@ -39,7 +39,8 @@ interface UserResult {
 
 /**
  * Modal de création d'une conversation.
- * Recherche les utilisateurs par @username via l'API puis soumet leurs IDs.
+ * Affiche des suggestions par défaut (abonnements + suggestions API) puis des résultats
+ * de recherche en temps réel quand l'utilisateur tape au moins 2 caractères.
  */
 function NewConversationModal({
   onClose,
@@ -47,18 +48,27 @@ function NewConversationModal({
 }: Readonly<{ onClose: () => void; onCreated: (id: string) => void }>) {
   const [query, setQuery]           = useState('');
   const [results, setResults]       = useState<UserResult[]>([]);
+  const [suggestions, setSuggestions] = useState<UserResult[]>([]);
   const [selected, setSelected]     = useState<UserResult[]>([]);
   const [searching, setSearching]   = useState(false);
   const [error, setError]           = useState('');
   const [loading, setLoading]       = useState(false);
 
-  /* Recherche debounced */
+  /* Suggestions par défaut au montage */
   useEffect(() => {
-    if (query.trim().length < 2) { setResults([]); return; }
+    api.get('/users/suggestions')
+      .then((r) => setSuggestions(r.data.data.users ?? []))
+      .catch(() => {});
+  }, []);
+
+  /* Recherche debounced — strip le "@" éventuel avant d'envoyer à l'API */
+  useEffect(() => {
+    const q = query.trim().replace(/^@/, '');
+    if (q.length < 1) { setResults([]); return; }
     const t = setTimeout(async () => {
       setSearching(true);
       try {
-        const r = await api.get(`/users/search?q=${encodeURIComponent(query.trim())}&limit=6`);
+        const r = await api.get(`/users/search?q=${encodeURIComponent(q)}&limit=6`);
         setResults(r.data.data.users ?? []);
       } catch {
         setResults([]);
@@ -104,7 +114,7 @@ function NewConversationModal({
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
+    <div className="fixed inset-0 z-[10000] flex items-end justify-center sm:items-center">
       {/* Backdrop: <button> is a native interactive element — satisfies S6847 */}
       <button
         className="absolute inset-0 cursor-default bg-black/50"
@@ -115,7 +125,7 @@ function NewConversationModal({
       <dialog
         open
         aria-labelledby="new-conv-title"
-        className="relative z-10 m-0 w-full max-w-sm rounded-t-3xl border-0 bg-bg p-5 shadow-xl sm:rounded-3xl"
+        className="relative z-10 m-0 w-full max-w-sm rounded-t-3xl border-0 bg-bg p-5 pb-[88px] shadow-xl sm:rounded-3xl sm:pb-5"
       >
         <div className="mb-4 flex items-center justify-between">
           <h2 id="new-conv-title" className="serif text-lg text-tx">Nouvelle conversation</h2>
@@ -150,29 +160,40 @@ function NewConversationModal({
           {searching && <span className="text-[10px] text-tx3">…</span>}
         </div>
 
-        {/* Résultats */}
-        {results.length > 0 && (
-          <ul className="mb-3 max-h-44 overflow-y-auto rounded-2xl border border-bd">
-            {results.map((u) => {
-              const isSelected = selected.some((s) => s.id === u.id);
-              return (
-                <li key={u.id}>
-                  <button
-                    onClick={() => toggleUser(u)}
-                    className={`flex w-full items-center gap-3 px-3 py-2.5 text-left transition hover:bg-sf ${isSelected ? 'bg-ac/5' : ''}`}
-                  >
-                    <Avatar username={u.username} size={32} />
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-semibold text-tx">{u.displayName}</div>
-                      <div className="text-xs text-tx3">@{u.username}</div>
-                    </div>
-                    {isSelected && <span className="text-xs font-bold text-ac">✓</span>}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+        {/* Liste : résultats de recherche OU suggestions par défaut */}
+        {(() => {
+          const list = query.trim().replace(/^@/, '').length >= 1 ? results : suggestions;
+          if (list.length === 0) return null;
+          return (
+            <div className="mb-3">
+              {query.trim().length < 2 && (
+                <p className="mb-1 px-1 text-[11px] font-semibold uppercase tracking-wide text-tx3">
+                  Suggestions
+                </p>
+              )}
+              <ul className="max-h-44 overflow-y-auto rounded-2xl border border-bd">
+                {list.map((u) => {
+                  const isSelected = selected.some((s) => s.id === u.id);
+                  return (
+                    <li key={u.id}>
+                      <button
+                        onClick={() => toggleUser(u)}
+                        className={`flex w-full items-center gap-3 px-3 py-2.5 text-left transition hover:bg-sf ${isSelected ? 'bg-ac/5' : ''}`}
+                      >
+                        <Avatar username={u.username} size={32} />
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-sm font-semibold text-tx">{u.displayName}</div>
+                          <div className="text-xs text-tx3">@{u.username}</div>
+                        </div>
+                        {isSelected && <span className="text-xs font-bold text-ac">✓</span>}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          );
+        })()}
 
         {error && <p className="mb-2 text-xs text-err">{error}</p>}
 

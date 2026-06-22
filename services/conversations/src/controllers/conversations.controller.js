@@ -30,6 +30,42 @@ function isParticipant(conv, userId) {
   return conv.participants.some((p) => p.userId === userId);
 }
 
+/** Extrait les usernames uniques mentionnés (@username) dans un texte. */
+function extractMentions(content) {
+  const matches = content.match(/@(\w+)/g) ?? [];
+  return [...new Set(matches.map((m) => m.slice(1).toLowerCase()))];
+}
+
+/** Résout une liste de usernames en IDs puis émet une notification de mention pour chacun. */
+async function dispatchMentionNotifications(content, authorId, authorUsername) {
+  const usernames = extractMentions(content).filter((u) => u !== authorUsername.toLowerCase());
+  if (!usernames.length) return;
+  try {
+    const res = await fetch(
+      `${env.usersUrl}/api/users/internal/batch-by-usernames?usernames=${usernames.join(',')}`,
+      { headers: { 'x-internal-key': env.internalKey } }
+    );
+    if (!res.ok) return;
+    const { data } = await res.json();
+    await Promise.allSettled(
+      (data?.users ?? []).map((u) =>
+        fetch(`${env.notificationsUrl}/api/notifications/internal`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-internal-key': env.internalKey },
+          body: JSON.stringify({
+            userId: u.id,
+            type: 'mention',
+            actor: { id: authorId, username: authorUsername },
+            payload: {},
+          }),
+        })
+      )
+    );
+  } catch {
+    // notifications non critiques — on ne fait pas échouer l'envoi du message
+  }
+}
+
 /**
  * @brief Résout les usernames par lot via le service Users (endpoint interne).
  * @param userIds Liste d'UUIDs à résoudre.
@@ -153,6 +189,9 @@ export async function sendMessage(req, res) {
     },
     updatedAt: message.createdAt,
   });
+
+  // Notifications de mention — fire-and-forget, ne bloque pas la réponse
+  dispatchMentionNotifications(content.trim(), req.user.id, req.user.username);
 
   return ok(res, { message }, null, 201);
 }

@@ -5,7 +5,7 @@
  * Référence : §7.3 du cahier des charges (access store partagé).
  */
 import { create } from 'zustand';
-import { api, setAccessToken } from '@/lib/api';
+import { api, setAccessToken, setOnRefreshFailed } from '@/lib/api';
 import { useLang } from '@/store/lang';
 import type { User } from '@/lib/types';
 
@@ -73,3 +73,9 @@ export const useAuth = create<AuthState>((set) => ({
 
   setUser: (u) => set({ user: u }),
 }));
+
+// Déconnecte proprement si le refresh token expire côté serveur
+setOnRefreshFailed(() => {
+  setAccessToken(null);
+  useAuth.setState({ user: null });
+});

@@ -8,9 +8,23 @@
  */
 import axios, { AxiosError, AxiosRequestConfig } from 'axios';
 
-// URL relative par défaut : le frontend et l'API partagent l'origine du gateway,
-// ce qui fonctionne quel que soit l'hôte (localhost, IP LAN, domaine…).
-const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
+// URL de l'API : relative par défaut.
+// Garde-fou runtime : si l'image Docker a été construite avec une URL absolue
+// (ex. NEXT_PUBLIC_API_URL=http://localhost/api) mais que la page est servie sur
+// un port différent (ex. :8080), les requêtes violerait le CSP. On détecte ce
+// cas au runtime et on repasse en URL relative pour rester same-origin.
+const _baked = process.env.NEXT_PUBLIC_API_URL || '/api';
+const API_URL = (() => {
+  if (globalThis.window === undefined || !_baked.startsWith('http')) return _baked;
+  try {
+    const baked   = new URL(_baked);
+    const current = new URL(globalThis.location.href);
+    if (baked.hostname === current.hostname && baked.port !== current.port) {
+      return baked.pathname; // '/api' — URL relative same-origin
+    }
+  } catch { /* noop */ }
+  return _baked;
+})();
 
 // Jeton d'accès conservé en mémoire (jamais en localStorage : limite l'exposition au XSS).
 // Le refresh token vit dans un cookie HttpOnly géré par le service Auth.

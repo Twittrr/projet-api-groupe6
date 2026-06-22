@@ -4,12 +4,16 @@
  */
 import rateLimit from 'express-rate-limit';
 
+const isProd = process.env.NODE_ENV === 'production';
+
 /**
- * @brief Limiteur strict (login/register) : protège du brute-force et de l'énumération de comptes.
+ * @brief Limiteur strict (login/register/refresh) : protège du brute-force.
+ * En développement les seuils sont volontairement relâchés pour ne pas bloquer
+ * les montages multiples (bootstrap, HMR, tests répétés).
  */
 export const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 min
-  max: 20, // 20 tentatives / IP / fenêtre
+  windowMs: 15 * 60 * 1000,          // fenêtre 15 min
+  max: isProd ? 30 : 300,             // prod : 30 ; dev : 300
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -22,7 +26,7 @@ export const authLimiter = rateLimit({
 // Limiteur global plus permissif
 export const globalLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 120,
+  max: isProd ? 200 : 2000,
   standardHeaders: true,
   legacyHeaders: false,
 });

@@ -59,6 +59,7 @@ const fr = {
   'notif.comment': 'a répondu à votre message',
   'notif.follow':  'a commencé à vous suivre',
   'notif.mention': 'vous a mentionné',
+  'notif.message': 'vous a envoyé un message',
 
   // Paramètres
   'settings.title':       'Réglages',
@@ -145,6 +146,7 @@ const en: Record<keyof typeof fr, string> = {
   'notif.comment': 'replied to your post',
   'notif.follow':  'started following you',
   'notif.mention': 'mentioned you',
+  'notif.message': 'sent you a message',
 
   // Settings
   'settings.title':       'Settings',

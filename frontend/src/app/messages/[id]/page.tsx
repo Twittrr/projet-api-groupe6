@@ -114,6 +114,8 @@ export default function ConversationPage() {
       .then((r) => setConv(r.data.data.conversation as Conversation))
       .catch(() => router.replace('/messages'));
     loadMessages();
+    // Marque les messages comme lus et supprime les notifications associées
+    api.patch(`/conversations/${id}/read`).catch(() => {});
     // Pré-chargement des suggestions pour les mentions
     api.get('/users/suggestions')
       .then((r) => setSuggestions(r.data.data.users ?? []))

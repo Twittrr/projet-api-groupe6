@@ -5,7 +5,7 @@
  */
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Heart, MessageCircle, UserPlus, AtSign } from 'lucide-react';
+import { Heart, MessageCircle, UserPlus, AtSign, MessageSquare } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useRequireAuth } from '@/lib/useRequireAuth';
 import { useLang } from '@/store/lang';
@@ -15,7 +15,7 @@ import AppShell from '@/components/AppShell';
 import { timeAgo } from '@/lib/helpers';
 import type { Notification } from '@/lib/types';
 
-const ICON = { like: Heart, comment: MessageCircle, follow: UserPlus, mention: AtSign };
+const ICON = { like: Heart, comment: MessageCircle, follow: UserPlus, mention: AtSign, message: MessageSquare };
 
 export default function NotificationsPage() {
   const router = useRouter();
@@ -29,6 +29,7 @@ export default function NotificationsPage() {
     comment: t('notif.comment'),
     follow:  t('notif.follow'),
     mention: t('notif.mention'),
+    message: t('notif.message'),
   };
 
   useEffect(() => {
@@ -47,12 +48,16 @@ export default function NotificationsPage() {
       <main className="divide-y divide-bd pb-24 lg:pb-6">
         {items.length === 0 && <p className="py-16 text-center text-tx3">{t('notif.empty')}</p>}
         {items.map((n) => {
-          const Icon = ICON[n.type] || Heart;
+          const Icon = ICON[n.type as keyof typeof ICON] || Heart;
           const postId = n.payload?.postId as string | undefined;
+          const convId = n.payload?.conversationId as string | undefined;
+          let destination = `/profile/${n.actor.username}`;
+          if (convId) destination = `/messages/${convId}`;
+          else if (postId) destination = `/post/${postId}`;
           return (
             <button
               key={n._id}
-              onClick={() => (postId ? router.push(`/post/${postId}`) : router.push(`/profile/${n.actor.username}`))}
+              onClick={() => router.push(destination)}
               className={`flex w-full items-center gap-3 p-3 text-left ${n.read ? '' : 'bg-ac2'}`}
             >
               <Avatar username={n.actor.username} size={40} />

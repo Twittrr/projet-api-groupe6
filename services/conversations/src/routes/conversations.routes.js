@@ -12,6 +12,8 @@ import {
   sendMessage,
   addMembers,
   removeMember,
+  getUnreadCount,
+  markRead,
 } from '../controllers/conversations.controller.js';
 
 /** @brief Async handler : capture les rejets de promesse et les transmet à next(). */
@@ -23,10 +25,12 @@ const router = Router();
 router.use(authenticate);
 
 router.get('/', ah(listConversations));
+router.get('/unread-count', ah(getUnreadCount));
 router.post('/', ah(createConversation));
 router.get('/:id', ah(getConversation));
 router.get('/:id/messages', ah(listMessages));
 router.post('/:id/messages', ah(sendMessage));
+router.patch('/:id/read', ah(markRead));
 router.post('/:id/members', ah(addMembers));
 router.delete('/:id/members/:userId', ah(removeMember));
 

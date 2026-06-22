@@ -146,6 +146,17 @@ export async function trendingTags(_req, res) {
   return ok(res, { tags: tags.map((t) => ({ tag: t._id, count: t.count })) });
 }
 
+/** @brief Recherche de posts par mot-clé dans le contenu (regex case-insensitive). */
+export async function searchPosts(req, res) {
+  const q = (req.query.q || '').trim();
+  if (!q) return ok(res, { posts: [] });
+  const limit = Math.min(20, Math.max(1, Number.parseInt(req.query.limit) || 10));
+  const posts = await Post.find(
+    { content: { $regex: q, $options: 'i' } }
+  ).sort({ createdAt: -1 }).limit(limit);
+  return ok(res, { posts: await serialize(posts, req.user?.id) });
+}
+
 /** @brief Fx4 — Modifie le contenu d'un post (auteur uniquement). */
 export async function updatePost(req, res) {
   const post = await Post.findById(req.params.id);

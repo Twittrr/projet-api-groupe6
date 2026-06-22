@@ -7,7 +7,7 @@ import mongoose from 'mongoose';
 const NotificationSchema = new mongoose.Schema(
   {
     userId: { type: String, required: true, index: true },
-    type:   { type: String, enum: ['like', 'comment', 'follow', 'mention'], required: true },
+    type:   { type: String, enum: ['like', 'comment', 'follow', 'mention', 'message'], required: true },
     actor:  {
       id:       { type: String, required: true },
       username: { type: String, required: true },

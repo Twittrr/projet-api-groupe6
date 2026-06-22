@@ -6,8 +6,10 @@
  * Desktop (≥ lg) : 3 colonnes (navigation gauche 240px, contenu central 600px, sidebar droite).
  * Mobile : contenu seul + BottomNav flottante.
  */
+import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Home, Compass, Bell, MessageSquare, User, Settings, Shield, PenLine, Moon, Sun } from 'lucide-react';
+import { api } from '@/lib/api';
 import { useAuth } from '@/store/auth';
 import { useTheme } from '@/store/theme';
 import { useT } from '@/lib/useT';
@@ -20,14 +22,31 @@ export default function AppShell({ children }: Readonly<{ children: React.ReactN
   const user = useAuth((s) => s.user);
   const { theme, toggle } = useTheme();
   const t = useT();
+  const [unreadMessages, setUnreadMessages] = useState(0);
+
+  useEffect(() => {
+    if (!user) { setUnreadMessages(0); return; }
+    const fetch = () => {
+      api.get('/conversations/unread-count')
+        .then((r) => setUnreadMessages(r.data.data.count ?? 0))
+        .catch(() => {});
+    };
+    fetch();
+    const timer = setInterval(fetch, 30_000);
+    return () => clearInterval(timer);
+  }, [user]);
+
+  useEffect(() => {
+    if (pathname === '/messages' || pathname.startsWith('/messages/')) setUnreadMessages(0);
+  }, [pathname]);
 
   const navItems = [
-    { href: '/feed',          icon: Home,          label: t('nav.feed') },
-    { href: '/explore',       icon: Compass,       label: t('nav.explore') },
-    { href: '/notifications', icon: Bell,          label: t('nav.notifications') },
-    { href: '/messages',      icon: MessageSquare, label: t('nav.messages') },
-    { href: user ? `/profile/${user.username}` : '/login', icon: User, label: t('nav.profile') },
-    { href: '/settings',      icon: Settings,      label: t('nav.settings') },
+    { href: '/feed',          icon: Home,          label: t('nav.feed'),          badge: 0 },
+    { href: '/explore',       icon: Compass,       label: t('nav.explore'),       badge: 0 },
+    { href: '/notifications', icon: Bell,          label: t('nav.notifications'), badge: 0 },
+    { href: '/messages',      icon: MessageSquare, label: t('nav.messages'),      badge: unreadMessages },
+    { href: user ? `/profile/${user.username}` : '/login', icon: User, label: t('nav.profile'), badge: 0 },
+    { href: '/settings',      icon: Settings,      label: t('nav.settings'),      badge: 0 },
   ];
 
   const isActive = (href: string) =>
@@ -43,7 +62,7 @@ export default function AppShell({ children }: Readonly<{ children: React.ReactN
         </button>
 
         <nav className="flex flex-col gap-1">
-          {navItems.map(({ href, icon: Icon, label }) => {
+          {navItems.map(({ href, icon: Icon, label, badge }) => {
             const active = isActive(href);
             return (
               <button
@@ -53,7 +72,14 @@ export default function AppShell({ children }: Readonly<{ children: React.ReactN
                   active ? 'font-bold text-tx' : 'text-tx2 hover:bg-sf'
                 }`}
               >
-                <Icon size={22} strokeWidth={active ? 2.4 : 2} className={active ? 'text-ac' : ''} />
+                <span className="relative">
+                  <Icon size={22} strokeWidth={active ? 2.4 : 2} className={active ? 'text-ac' : ''} />
+                  {badge > 0 && (
+                    <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-ac text-[9px] font-bold text-white">
+                      {badge > 9 ? '9+' : badge}
+                    </span>
+                  )}
+                </span>
                 {label}
               </button>
             );

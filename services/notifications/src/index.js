@@ -20,7 +20,7 @@ const ah   = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).cat
 // ---- Schéma Zod pour l'endpoint interne ----
 const internalNotifSchema = z.object({
   userId:  z.string().min(1),
-  type:    z.enum(['like', 'comment', 'follow', 'mention']),
+  type:    z.enum(['like', 'comment', 'follow', 'mention', 'message']),
   actor:   z.object({ id: z.string().min(1), username: z.string().min(1) }),
   payload: z.record(z.unknown()).default({}),
 });
@@ -57,6 +57,14 @@ function createApp() {
   const r = express.Router();
 
   r.get('/health', (_req, res) => res.json({ data: { status: 'ok', service: 'notifications' }, error: null }));
+
+  // Suppression interne des notifications message d'une conversation (quand l'utilisateur la lit)
+  r.delete('/internal/clear-conversation', requireInternal, ah(async (req, res) => {
+    const { userId, conversationId } = req.body;
+    if (!userId || !conversationId) return fail(res, 422, 'VALIDATION_ERROR', 'userId et conversationId requis.');
+    await Notification.deleteMany({ userId, type: 'message', 'payload.conversationId': conversationId });
+    return ok(res, { cleared: true });
+  }));
 
   // Création interne — validée via Zod (payload type-safe)
   r.post('/internal', requireInternal, ah(async (req, res) => {

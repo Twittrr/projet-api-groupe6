@@ -1,7 +1,7 @@
 'use client';
 /**
  * @file explore/page.tsx
- * @brief Écran Explorer : recherche d'utilisateurs et posts récents de la plateforme.
+ * @brief Écran Explorer : recherche par @utilisateur, #tag ou mot-clé dans le contenu.
  */
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -12,24 +12,60 @@ import PostCard from '@/components/PostCard';
 import AppShell from '@/components/AppShell';
 import type { Post, User } from '@/lib/types';
 
+type SearchMode = 'user' | 'tag' | 'keyword';
+
+function getMode(q: string): SearchMode {
+  if (q.startsWith('@')) return 'user';
+  if (q.startsWith('#')) return 'tag';
+  return 'keyword';
+}
+
 export default function ExplorePage() {
   const router = useRouter();
   const [posts, setPosts] = useState<Post[]>([]);
   const [q, setQ] = useState('');
   const [users, setUsers] = useState<User[]>([]);
+  const [postResults, setPostResults] = useState<Post[]>([]);
 
   useEffect(() => {
     api.get('/posts/explore').then((r) => setPosts(r.data.data.posts)).catch(() => {});
   }, []);
 
   useEffect(() => {
-    const term = q.trim();
-    if (term.length < 1) { setUsers([]); return; }
+    const raw = q.trim();
+    if (raw.length < 1) { setUsers([]); setPostResults([]); return; }
+
+    const mode = getMode(raw);
+    const term = raw.replace(/^[@#]/, '');
+
     const t = setTimeout(() => {
-      api.get(`/users/search?q=${encodeURIComponent(term)}&limit=8`).then((r) => setUsers(r.data.data.users ?? [])).catch(() => {});
+      if (mode === 'user') {
+        api.get(`/users/search?q=${encodeURIComponent(term)}&limit=10`)
+          .then((r) => { setUsers(r.data.data.users ?? []); setPostResults([]); })
+          .catch(() => {});
+        return;
+      }
+      if (mode === 'tag') {
+        api.get(`/posts/tag/${encodeURIComponent(term)}`)
+          .then((r) => { setPostResults(r.data.data.posts ?? []); setUsers([]); })
+          .catch(() => {});
+        return;
+      }
+      // keyword: search both users and posts in parallel
+      Promise.all([
+        api.get(`/users/search?q=${encodeURIComponent(term)}&limit=5`).catch(() => null),
+        api.get(`/posts/search?q=${encodeURIComponent(term)}&limit=10`).catch(() => null),
+      ]).then(([uRes, pRes]) => {
+        setUsers(uRes?.data.data.users ?? []);
+        setPostResults(pRes?.data.data.posts ?? []);
+      });
     }, 250);
     return () => clearTimeout(t);
   }, [q]);
+
+  const hasQuery = q.trim().length > 0;
+  const mode = getMode(q.trim());
+  const noResults = users.length === 0 && postResults.length === 0;
 
   return (
     <AppShell>
@@ -39,17 +75,32 @@ export default function ExplorePage() {
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Rechercher des utilisateurs…"
+            placeholder="@user  #tag  ou mot-clé…"
             className="w-full bg-transparent text-sm text-tx outline-none placeholder:text-tx4"
           />
         </div>
       </header>
 
       <main className="p-3 pb-24 lg:pb-6">
-        {q.trim().length > 0 ? (
+        {!hasQuery && (
           <>
-            {users.length === 0 && (
-              <p className="py-10 text-center text-sm text-tx3">Aucun résultat pour « {q.trim()} »</p>
+            <h2 className="serif mb-2 text-xl text-tx">Explorer</h2>
+            <div className="space-y-2.5">
+              {posts.map((p) => <PostCard key={p.id} post={p} />)}
+            </div>
+          </>
+        )}
+
+        {hasQuery && noResults && (
+          <p className="py-10 text-center text-sm text-tx3">
+            Aucun résultat pour « {q.trim()} »
+          </p>
+        )}
+
+        {hasQuery && users.length > 0 && (
+          <section className="mb-4">
+            {mode === 'keyword' && (
+              <h3 className="mb-1 px-1 text-xs font-semibold uppercase tracking-wide text-tx3">Utilisateurs</h3>
             )}
             <div className="space-y-1">
               {users.map((u) => (
@@ -66,14 +117,18 @@ export default function ExplorePage() {
                 </button>
               ))}
             </div>
-          </>
-        ) : (
-          <>
-            <h2 className="serif mb-2 text-xl text-tx">Explorer</h2>
+          </section>
+        )}
+
+        {hasQuery && postResults.length > 0 && (
+          <section>
+            {mode === 'keyword' && (
+              <h3 className="mb-1 px-1 text-xs font-semibold uppercase tracking-wide text-tx3">Publications</h3>
+            )}
             <div className="space-y-2.5">
-              {posts.map((p) => <PostCard key={p.id} post={p} />)}
+              {postResults.map((p) => <PostCard key={p.id} post={p} />)}
             </div>
-          </>
+          </section>
         )}
       </main>
     </AppShell>

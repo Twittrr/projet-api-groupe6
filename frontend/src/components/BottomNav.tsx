@@ -5,7 +5,7 @@
  */
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, Compass, Plus, Bell, User, type LucideIcon } from 'lucide-react';
+import { Home, Compass, Plus, Bell, User, MessageSquare, type LucideIcon } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/store/auth';
 import { useT } from '@/lib/useT';
@@ -18,9 +18,10 @@ interface NavTabProps {
   icon: LucideIcon;
   onClick: () => void;
   dot?: boolean;
+  badge?: number;
 }
 
-function NavTab({ active, label, icon: Icon, onClick, dot }: Readonly<NavTabProps>) {
+function NavTab({ active, label, icon: Icon, onClick, dot, badge }: Readonly<NavTabProps>) {
   return (
     <button
       onClick={onClick}
@@ -28,16 +29,26 @@ function NavTab({ active, label, icon: Icon, onClick, dot }: Readonly<NavTabProp
       className="relative flex h-[46px] flex-1 flex-col items-center justify-center gap-0.5 rounded-[17px] transition"
       style={{ background: active ? 'rgba(255,255,255,.11)' : 'transparent' }}
     >
-      <Icon size={19} color={active ? '#fff' : 'rgba(255,255,255,.48)'} />
+      <span className="relative">
+        <Icon size={19} color={active ? '#fff' : 'rgba(255,255,255,.48)'} />
+        {badge != null && badge > 0 && (
+          <span
+            className="absolute -right-2 -top-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full px-0.5 text-[8px] font-bold text-white"
+            style={{ background: 'var(--c-ac)', border: '1.5px solid var(--c-nav)' }}
+          >
+            {badge > 9 ? '9+' : badge}
+          </span>
+        )}
+        {dot && !badge && (
+          <span
+            className="absolute -right-0.5 -top-0.5 h-[7px] w-[7px] rounded-full"
+            style={{ background: 'var(--c-ac)', border: '1.5px solid var(--c-nav)' }}
+          />
+        )}
+      </span>
       <span className="text-[9px]" style={{ color: active ? '#fff' : 'rgba(255,255,255,.4)' }}>
         {label}
       </span>
-      {dot && (
-        <span
-          className="absolute right-4 top-2 h-[7px] w-[7px] rounded-full"
-          style={{ background: 'var(--c-ac)', border: '1.5px solid var(--c-nav)' }}
-        />
-      )}
     </button>
   );
 }
@@ -48,6 +59,7 @@ export default function BottomNav() {
   const user = useAuth((s) => s.user);
   const t = useT();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [unreadMessages, setUnreadMessages] = useState(0);
 
   useEffect(() => {
     if (!user) { setUnreadCount(0); return; }
@@ -61,9 +73,24 @@ export default function BottomNav() {
     return () => clearInterval(timer);
   }, [user]);
 
-  // Réinitialise le compteur quand l'utilisateur ouvre la page Activité
+  useEffect(() => {
+    if (!user) { setUnreadMessages(0); return; }
+    const fetchMsg = () => {
+      api.get('/conversations/unread-count')
+        .then((r) => setUnreadMessages(r.data.data.count ?? 0))
+        .catch(() => {});
+    };
+    fetchMsg();
+    const timer = setInterval(fetchMsg, 30_000);
+    return () => clearInterval(timer);
+  }, [user]);
+
   useEffect(() => {
     if (pathname === '/notifications') setUnreadCount(0);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (pathname === '/messages' || pathname.startsWith('/messages/')) setUnreadMessages(0);
   }, [pathname]);
 
   if (HIDDEN_PATHS.has(pathname)) return null;
@@ -81,8 +108,8 @@ export default function BottomNav() {
           className="flex items-center justify-between rounded-[24px] p-[7px]"
           style={{ background: 'var(--c-nav)', boxShadow: '0 8px 32px rgba(0,0,0,.3),0 2px 8px rgba(0,0,0,.18)' }}
         >
-          <NavTab active={pathname === '/feed'}           label={t('nav.home')}     icon={Home}    onClick={go('/feed')} />
-          <NavTab active={pathname === '/explore'}        label={t('nav.explore')}  icon={Compass} onClick={go('/explore')} />
+          <NavTab active={pathname === '/feed'}           label={t('nav.home')}     icon={Home}          onClick={go('/feed')} />
+          <NavTab active={pathname === '/explore'}        label={t('nav.explore')}  icon={Compass}       onClick={go('/explore')} />
 
           <button
             onClick={() => router.push(user ? '/compose' : '/login')}
@@ -97,8 +124,9 @@ export default function BottomNav() {
             </span>
           </button>
 
-          <NavTab active={pathname === '/notifications'} label={t('nav.activity')} icon={Bell} onClick={go('/notifications')} dot={unreadCount > 0} />
-          <NavTab active={pathname.startsWith('/profile')} label={t('nav.profile')} icon={User} onClick={go(profileHref)} />
+          <NavTab active={pathname.startsWith('/messages')} label={t('nav.messages')}  icon={MessageSquare} onClick={go('/messages')} badge={unreadMessages} />
+          <NavTab active={pathname === '/notifications'}    label={t('nav.activity')}  icon={Bell}          onClick={go('/notifications')} dot={unreadCount > 0} />
+          <NavTab active={pathname.startsWith('/profile')} label={t('nav.profile')}   icon={User}          onClick={go(profileHref)} />
         </div>
       </div>
     </nav>

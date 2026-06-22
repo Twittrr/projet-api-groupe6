@@ -29,6 +29,9 @@ router.get('/tags/trending', ah(posts.trendingTags));
 router.get('/tag/:tag', optionalAuth, ah(posts.getByTag));       // Fx13
 router.get('/user/:userId', optionalAuth, ah(posts.getUserPosts)); // Fx11
 
+// --- Recherche plein-texte (avant /:id pour éviter la capture) ---
+router.get('/search', optionalAuth, ah(posts.searchPosts));
+
 // --- Signalements & modération (avant /:id) ---
 router.post('/reports', authenticate, validate(createReportSchema), ah(reports.createReport)); // Fx20
 router.get('/reports', authenticate, requireRole('moderator', 'admin'), ah(reports.listReports));

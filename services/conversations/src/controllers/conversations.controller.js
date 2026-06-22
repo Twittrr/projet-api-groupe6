@@ -66,6 +66,41 @@ async function dispatchMentionNotifications(content, authorId, authorUsername) {
   }
 }
 
+/** Supprime les notifications de type 'message' liées à cette conversation pour cet utilisateur. */
+async function clearMessageNotifications(conversationId, userId) {
+  try {
+    await fetch(`${env.notificationsUrl}/api/notifications/internal/clear-conversation`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json', 'x-internal-key': env.internalKey },
+      body: JSON.stringify({ userId, conversationId }),
+    });
+  } catch { /* non critique */ }
+}
+
+/** Émet une notification de message privé à tous les autres participants de la conversation. */
+async function dispatchMessageNotification(conv, authorId, authorUsername, excerpt) {
+  const others = conv.participants.filter((p) => p.userId !== authorId);
+  if (!others.length) return;
+  try {
+    await Promise.allSettled(
+      others.map((p) =>
+        fetch(`${env.notificationsUrl}/api/notifications/internal`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-internal-key': env.internalKey },
+          body: JSON.stringify({
+            userId: p.userId,
+            type: 'message',
+            actor: { id: authorId, username: authorUsername },
+            payload: { conversationId: conv._id.toString(), excerpt },
+          }),
+        })
+      )
+    );
+  } catch {
+    // non critique
+  }
+}
+
 /**
  * @brief Résout les usernames par lot via le service Users (endpoint interne).
  * @param userIds Liste d'UUIDs à résoudre.
@@ -190,8 +225,9 @@ export async function sendMessage(req, res) {
     updatedAt: message.createdAt,
   });
 
-  // Notifications de mention — fire-and-forget, ne bloque pas la réponse
+  // Notifications mention + message — fire-and-forget
   dispatchMentionNotifications(content.trim(), req.user.id, req.user.username);
+  dispatchMessageNotification(conv, req.user.id, req.user.username, content.trim().slice(0, 80));
 
   return ok(res, { message }, null, 201);
 }
@@ -225,6 +261,34 @@ export async function addMembers(req, res) {
   }
 
   return ok(res, { conversation: conv });
+}
+
+/** @brief Marque tous les messages d'une conversation comme lus et nettoie les notifications associées. */
+export async function markRead(req, res) {
+  const conv = await Conversation.findById(req.params.id);
+  if (!conv) return fail(res, 404, 'NOT_FOUND', 'Conversation introuvable.');
+  if (!isParticipant(conv, req.user.id)) return fail(res, 403, 'FORBIDDEN', 'Accès refusé.');
+
+  await Message.updateMany(
+    { conversationId: req.params.id, readBy: { $nin: [req.user.id] } },
+    { $addToSet: { readBy: req.user.id } }
+  );
+  clearMessageNotifications(req.params.id, req.user.id);
+
+  return ok(res, { read: true });
+}
+
+/** @brief Compteur de messages non lus dans toutes les conversations de l'utilisateur. */
+export async function getUnreadCount(req, res) {
+  const convIds = (
+    await Conversation.find({ 'participants.userId': req.user.id }).select('_id')
+  ).map((c) => c._id.toString());
+  const count = await Message.countDocuments({
+    conversationId: { $in: convIds },
+    authorId:       { $ne: req.user.id },
+    readBy:         { $nin: [req.user.id] },
+  });
+  return ok(res, { count });
 }
 
 /** @brief Retire un membre d'une conversation (soi-même ou admin du groupe). */

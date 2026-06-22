@@ -8,7 +8,7 @@ import { Like }     from '../models/like.model.js';
 import { Reply }    from '../models/reply.model.js';
 import { Bookmark } from '../models/bookmark.model.js';
 import { ok, created, AppError } from '../utils/response.js';
-import { getFollowingIds, emitNotification } from '../utils/services.js';
+import { getFollowingIds, emitNotification, getMentionedUserIds } from '../utils/services.js';
 
 const PAGE = 20;
 
@@ -77,6 +77,14 @@ export async function createPost(req, res) {
     tags,
     media: media || [],
   });
+  // Fx14 — notifications @mentions
+  const mentionIds = await getMentionedUserIds(content, req.user.id);
+  mentionIds.forEach((uid) => emitNotification({
+    userId: uid,
+    type: 'mention',
+    actor: { id: req.user.id, username: req.user.username },
+    payload: { postId: post._id.toString(), excerpt: content.slice(0, 100) },
+  }));
   return created(res, { post: await serialize(post, req.user.id) });
 }
 
@@ -277,6 +285,14 @@ export async function createComment(req, res) {
     actor:   { id: req.user.id, username: req.user.username },
     payload: { postId: post._id.toString(), excerpt: req.body.content.slice(0, 60) },
   });
+  // Fx14 — @mentions dans le commentaire
+  const mentionIds = await getMentionedUserIds(req.body.content, req.user.id);
+  mentionIds.forEach((uid) => emitNotification({
+    userId: uid,
+    type: 'mention',
+    actor: { id: req.user.id, username: req.user.username },
+    payload: { postId: post._id.toString(), excerpt: req.body.content.slice(0, 100) },
+  }));
   return created(res, {
     comment: {
       id:              comment._id,
@@ -346,6 +362,14 @@ export async function createReply(req, res) {
       payload: { postId: comment.postId.toString(), excerpt: req.body.content.slice(0, 60) },
     });
   }
+  // Fx14 — @mentions dans la reply
+  const mentionIds = await getMentionedUserIds(req.body.content, req.user.id);
+  mentionIds.forEach((uid) => emitNotification({
+    userId: uid,
+    type: 'mention',
+    actor: { id: req.user.id, username: req.user.username },
+    payload: { postId: comment.postId.toString(), excerpt: req.body.content.slice(0, 100) },
+  }));
 
   return created(res, {
     reply: {

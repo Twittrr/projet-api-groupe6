@@ -6,7 +6,14 @@
  */
 import { create } from 'zustand';
 import { api, setAccessToken } from '@/lib/api';
+import { useLang } from '@/store/lang';
 import type { User } from '@/lib/types';
+
+function syncLang(user: User) {
+  if (user.language === 'fr' || user.language === 'en') {
+    useLang.getState().setLang(user.language);
+  }
+}
 
 /** État et actions exposés par le store d'authentification. */
 interface AuthState {
@@ -26,14 +33,18 @@ export const useAuth = create<AuthState>((set) => ({
 
   login: async (identifier, password) => {
     const res = await api.post('/auth/login', { identifier, password });
-    setAccessToken(res.data.data.accessToken);
-    set({ user: res.data.data.user });
+    const { accessToken, user } = res.data.data;
+    setAccessToken(accessToken);
+    syncLang(user);
+    set({ user });
   },
 
   register: async (username, email, password) => {
     const res = await api.post('/auth/register', { username, email, password });
-    setAccessToken(res.data.data.accessToken);
-    set({ user: res.data.data.user });
+    const { accessToken, user } = res.data.data;
+    setAccessToken(accessToken);
+    syncLang(user);
+    set({ user });
   },
 
   logout: async () => {
@@ -46,8 +57,10 @@ export const useAuth = create<AuthState>((set) => ({
   bootstrap: async () => {
     try {
       const res = await api.post('/auth/refresh');
-      setAccessToken(res.data.data.accessToken);
-      set({ user: res.data.data.user, ready: true });
+      const { accessToken, user } = res.data.data;
+      setAccessToken(accessToken);
+      syncLang(user);
+      set({ user, ready: true });
     } catch {
       set({ user: null, ready: true });
     }

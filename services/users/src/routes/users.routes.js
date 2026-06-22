@@ -23,6 +23,7 @@ router.patch('/me/theme', authenticate, validate(updateThemeSchema), ah(ctrl.upd
 // Endpoints internes (avant les routes paramétrées génériques)
 router.get('/internal/:id/following-ids', requireInternal, ah(ctrl.internalFollowingIds));
 router.get('/internal/batch', requireInternal, ah(ctrl.internalBatchUsers));
+router.get('/internal/batch-by-usernames', requireInternal, ah(ctrl.batchByUsernames));
 
 // Graphe social
 router.post('/:id/follow', authenticate, ah(ctrl.follow));

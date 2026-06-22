@@ -13,12 +13,13 @@ import type { Post } from '@/lib/types';
 
 // Fx13 — Recherche par tag
 export default function TagPage() {
-  const { tag } = useParams<{ tag: string }>();
+  const { tag: rawTag } = useParams<{ tag: string }>();
+  const tag = decodeURIComponent(rawTag ?? '');
   const [posts, setPosts] = useState<Post[]>([]);
 
   useEffect(() => {
     if (!tag) return;
-    api.get(`/posts/tag/${tag}`).then((r) => setPosts(r.data.data.posts)).catch(() => {});
+    api.get(`/posts/tag/${encodeURIComponent(tag)}`).then((r) => setPosts(r.data.data.posts)).catch(() => {});
   }, [tag]);
 
   return (

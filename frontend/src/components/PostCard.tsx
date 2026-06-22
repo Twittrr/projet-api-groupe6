@@ -13,6 +13,8 @@ import { Heart, MessageCircle, Repeat2, Bookmark, MoreHorizontal } from 'lucide-
 import Avatar from './Avatar';
 import { api } from '@/lib/api';
 import { useAuth } from '@/store/auth';
+import { useLang } from '@/store/lang';
+import { useT } from '@/lib/useT';
 import { timeAgo, mediaUrl, isGradient } from '@/lib/helpers';
 import type { Post, Media } from '@/lib/types';
 
@@ -50,6 +52,8 @@ function MediaBlock({ media }: Readonly<{ media: Media[] }>) {
 export default function PostCard({ post: initial }: Readonly<{ post: Post }>) {
   const router = useRouter();
   const user = useAuth((s) => s.user);
+  const { lang } = useLang();
+  const t = useT();
   const [post, setPost] = useState(initial);
 
   const isTextOnly = !post.media?.length;
@@ -87,7 +91,7 @@ export default function PostCard({ post: initial }: Readonly<{ post: Post }>) {
     <article className="animate-sin relative rounded-[24px] border border-bd bg-sf p-[15px]">
       <button
         onClick={open}
-        aria-label={`Voir le post de @${post.authorUsername}`}
+        aria-label={`${post.authorUsername}`}
         className="absolute inset-0 rounded-[24px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ac"
       />
 
@@ -95,20 +99,20 @@ export default function PostCard({ post: initial }: Readonly<{ post: Post }>) {
         <div className="flex items-center gap-[11px]">
           <button
             onClick={inner(() => router.push(`/profile/${post.authorUsername}`))}
-            aria-label={`Profil de @${post.authorUsername}`}
+            aria-label={`@${post.authorUsername}`}
           >
             <Avatar username={post.authorUsername} size={40} />
           </button>
           <div className="min-w-0 flex-1">
             <div className="truncate text-[13px] font-semibold text-tx">
               {displayName}{' '}
-              <span className="font-normal text-tx3">@{post.authorUsername} · {timeAgo(post.createdAt)}</span>
+              <span className="font-normal text-tx3">@{post.authorUsername} · {timeAgo(post.createdAt, lang)}</span>
             </div>
-            <div className="text-[10px] text-tx4">public</div>
+            <div className="text-[10px] text-tx4">{t('post.public')}</div>
           </div>
           <button
             onClick={inner(() => router.push(`/report?type=post&id=${post.id}`))}
-            aria-label="Signaler ce post"
+            aria-label={t('post.report')}
             className="flex h-[30px] w-[30px] items-center justify-center text-tx3"
           >
             <MoreHorizontal size={15} />
@@ -126,13 +130,13 @@ export default function PostCard({ post: initial }: Readonly<{ post: Post }>) {
 
         {post.tags?.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1.5">
-            {post.tags.map((t) => (
+            {post.tags.map((tag) => (
               <button
-                key={t}
-                onClick={inner(() => router.push(`/tag/${encodeURIComponent(t)}`))}
+                key={tag}
+                onClick={inner(() => router.push(`/tag/${encodeURIComponent(tag)}`))}
                 className="rounded-full bg-sf2 px-2.5 py-0.5 text-[12px] text-ac"
               >
-                #{t}
+                #{tag}
               </button>
             ))}
           </div>
@@ -140,18 +144,18 @@ export default function PostCard({ post: initial }: Readonly<{ post: Post }>) {
 
         <div className="mt-[13px] flex items-center justify-between border-t border-bd pt-[11px]">
           <div className="flex items-center gap-[14px]">
-            <button onClick={inner(toggleLike)} className="flex items-center gap-[5px] text-[13px] text-tx3" aria-label="Aimer">
+            <button onClick={inner(toggleLike)} className="flex items-center gap-[5px] text-[13px] text-tx3" aria-label={t('post.like')}>
               <Heart size={15} className={post.liked ? 'animate-hpop fill-err text-err' : ''} />
               <span className={post.liked ? 'text-err' : ''}>{post.likeCount}</span>
             </button>
-            <button onClick={inner(open)} className="flex items-center gap-[5px] text-[13px] text-tx3" aria-label="Répondre">
+            <button onClick={inner(open)} className="flex items-center gap-[5px] text-[13px] text-tx3" aria-label={t('post.comment')}>
               <MessageCircle size={15} /> {post.commentCount}
             </button>
             <span className="flex items-center gap-[5px] text-[13px] text-tx4" aria-hidden>
               <Repeat2 size={15} /> {post.repostCount ?? 0}
             </span>
           </div>
-          <button onClick={inner(toggleBookmark)} aria-label="Enregistrer" className="text-tx3">
+          <button onClick={inner(toggleBookmark)} aria-label={t('post.bookmark')} className="text-tx3">
             <Bookmark size={15} className={post.bookmarked ? 'fill-ac text-ac' : ''} />
           </button>
         </div>

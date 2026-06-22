@@ -24,6 +24,28 @@ export async function getFollowingIds(userId) {
 }
 
 /**
+ * @brief Extrait les @mentions d'un contenu et résout les usernames en IDs utilisateurs.
+ * Exclut l'auteur pour éviter l'auto-notification.
+ * @param content Texte du post / commentaire / reply.
+ * @param authorId ID de l'auteur (exclu des résultats).
+ * @returns Tableau d'IDs uniques des utilisateurs mentionnés.
+ */
+export async function getMentionedUserIds(content, authorId) {
+  const usernames = [...new Set((content.match(/@(\w{3,30})/g) || []).map((m) => m.slice(1).toLowerCase()))];
+  if (!usernames.length) return [];
+  try {
+    const url = `${env.usersUrl}/api/users/internal/batch-by-usernames?usernames=${encodeURIComponent(usernames.join(','))}`;
+    const res = await fetch(url, { headers: { 'x-internal-key': env.internalKey } });
+    if (!res.ok) return [];
+    const json = await res.json();
+    return (json.data?.users || []).map((u) => u.id).filter((id) => id !== authorId);
+  } catch (err) {
+    console.warn(`[posts] Résolution @mentions échouée : ${err.message}`);
+    return [];
+  }
+}
+
+/**
  * @brief Émet une notification (service Notifications) sans bloquer l'action principale.
  * @param params `{ userId, type, actor, payload }` ; ignore l'auto-notification.
  * @returns Résout toujours (les erreurs sont journalisées, non propagées).

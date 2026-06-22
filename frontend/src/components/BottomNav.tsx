@@ -2,18 +2,12 @@
 /**
  * @file BottomNav.tsx
  * @brief Barre de navigation inférieure (mobile) — pill sombre flottant fidèle à la maquette.
- *
- * Rendu directement depuis Providers (enfant direct de body) pour garantir que
- * position:fixed soit relatif au viewport et non à un ancêtre conteneur.
  */
 import { usePathname, useRouter } from 'next/navigation';
 import { Home, Compass, Plus, Bell, User, type LucideIcon } from 'lucide-react';
 import { useAuth } from '@/store/auth';
+import { useT } from '@/lib/useT';
 
-/**
- * Pages sur lesquelles la barre de navigation ne doit pas apparaître.
- * Inclut /welcome pour éviter la nav sur les pages d'onboarding.
- */
 const HIDDEN_PATHS = new Set(['/login', '/register', '/welcome']);
 
 interface NavTabProps {
@@ -24,7 +18,6 @@ interface NavTabProps {
   dot?: boolean;
 }
 
-/** @brief Onglet de la barre (icône + libellé), style pill sombre. */
 function NavTab({ active, label, icon: Icon, onClick, dot }: Readonly<NavTabProps>) {
   return (
     <button
@@ -47,16 +40,11 @@ function NavTab({ active, label, icon: Icon, onClick, dot }: Readonly<NavTabProp
   );
 }
 
-/**
- * @brief Barre de navigation mobile flottante.
- *
- * Styles inline intentionnels sur position:fixed pour garantir le comportement
- * indépendamment de tout contexte CSS parent.
- */
 export default function BottomNav() {
   const pathname = usePathname();
   const router = useRouter();
   const user = useAuth((s) => s.user);
+  const t = useT();
 
   if (HIDDEN_PATHS.has(pathname)) return null;
 
@@ -66,46 +54,31 @@ export default function BottomNav() {
   return (
     <nav
       className="lg:hidden"
-      style={{
-        position: 'fixed',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        zIndex: 9999,
-        padding: '0 10px 10px',
-        pointerEvents: 'none',
-      }}
+      style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 9999, padding: '0 10px 10px', pointerEvents: 'none' }}
     >
       <div className="mx-auto w-full max-w-[600px]" style={{ pointerEvents: 'auto' }}>
         <div
           className="flex items-center justify-between rounded-[24px] p-[7px]"
-          style={{
-            background: 'var(--c-nav)',
-            boxShadow: '0 8px 32px rgba(0,0,0,.3),0 2px 8px rgba(0,0,0,.18)',
-          }}
+          style={{ background: 'var(--c-nav)', boxShadow: '0 8px 32px rgba(0,0,0,.3),0 2px 8px rgba(0,0,0,.18)' }}
         >
-          <NavTab active={pathname === '/feed'}        label="Accueil" icon={Home}    onClick={go('/feed')} />
-          <NavTab active={pathname === '/explore'}     label="Explorer" icon={Compass} onClick={go('/explore')} />
+          <NavTab active={pathname === '/feed'}           label={t('nav.home')}     icon={Home}    onClick={go('/feed')} />
+          <NavTab active={pathname === '/explore'}        label={t('nav.explore')}  icon={Compass} onClick={go('/explore')} />
 
-          {/* Bouton central « Publier » — accent corail */}
           <button
             onClick={() => router.push(user ? '/compose' : '/login')}
-            aria-label="Publier"
+            aria-label={t('nav.publish')}
             className="flex flex-1 items-center justify-center"
           >
             <span
               className="flex h-[46px] w-[46px] items-center justify-center rounded-[17px]"
-              style={{
-                background: 'var(--c-ac)',
-                boxShadow: '0 4px 14px rgba(255,92,69,.45)',
-              }}
+              style={{ background: 'var(--c-ac)', boxShadow: '0 4px 14px rgba(255,92,69,.45)' }}
             >
               <Plus size={22} color="#fff" />
             </span>
           </button>
 
-          <NavTab active={pathname === '/notifications'} label="Activité" icon={Bell} onClick={go('/notifications')} dot />
-          <NavTab active={pathname.startsWith('/profile')} label="Profil" icon={User} onClick={go(profileHref)} />
+          <NavTab active={pathname === '/notifications'} label={t('nav.activity')} icon={Bell} onClick={go('/notifications')} dot />
+          <NavTab active={pathname.startsWith('/profile')} label={t('nav.profile')} icon={User} onClick={go(profileHref)} />
         </div>
       </div>
     </nav>

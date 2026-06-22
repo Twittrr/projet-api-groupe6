@@ -129,6 +129,17 @@ export async function listFollowing(req, res) {
   });
 }
 
+/**
+ * @brief Résout un lot de usernames en objets publics (appels internes Fx14 — @mentions).
+ * Query param : `usernames` (liste séparée par virgules, max 20).
+ */
+export async function batchByUsernames(req, res) {
+  const usernames = (req.query.usernames || '').split(',').map((u) => u.trim().toLowerCase()).filter(Boolean).slice(0, 20);
+  if (!usernames.length) return ok(res, { users: [] });
+  const users = await User.findAll({ where: { username: { [Op.in]: usernames } } });
+  return ok(res, { users: users.map((u) => publicUser(u)) });
+}
+
 /** @brief Recherche d'utilisateurs par username ou nom affiché. */
 export async function searchUsers(req, res) {
   const q = (req.query.q || '').toString().trim();

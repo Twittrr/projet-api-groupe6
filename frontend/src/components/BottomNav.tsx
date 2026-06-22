@@ -3,8 +3,10 @@
  * @file BottomNav.tsx
  * @brief Barre de navigation inférieure (mobile) — pill sombre flottant fidèle à la maquette.
  */
+import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Home, Compass, Plus, Bell, User, type LucideIcon } from 'lucide-react';
+import { api } from '@/lib/api';
 import { useAuth } from '@/store/auth';
 import { useT } from '@/lib/useT';
 
@@ -45,6 +47,24 @@ export default function BottomNav() {
   const router = useRouter();
   const user = useAuth((s) => s.user);
   const t = useT();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (!user) { setUnreadCount(0); return; }
+    const fetchCount = () => {
+      api.get('/notifications/unread-count')
+        .then((r) => setUnreadCount(r.data.data.count ?? 0))
+        .catch(() => {});
+    };
+    fetchCount();
+    const timer = setInterval(fetchCount, 60_000);
+    return () => clearInterval(timer);
+  }, [user]);
+
+  // Réinitialise le compteur quand l'utilisateur ouvre la page Activité
+  useEffect(() => {
+    if (pathname === '/notifications') setUnreadCount(0);
+  }, [pathname]);
 
   if (HIDDEN_PATHS.has(pathname)) return null;
 
@@ -77,7 +97,7 @@ export default function BottomNav() {
             </span>
           </button>
 
-          <NavTab active={pathname === '/notifications'} label={t('nav.activity')} icon={Bell} onClick={go('/notifications')} dot />
+          <NavTab active={pathname === '/notifications'} label={t('nav.activity')} icon={Bell} onClick={go('/notifications')} dot={unreadCount > 0} />
           <NavTab active={pathname.startsWith('/profile')} label={t('nav.profile')} icon={User} onClick={go(profileHref)} />
         </div>
       </div>

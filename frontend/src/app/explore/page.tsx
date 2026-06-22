@@ -23,9 +23,10 @@ export default function ExplorePage() {
   }, []);
 
   useEffect(() => {
-    if (q.trim().length < 2) { setUsers([]); return; }
+    const term = q.trim();
+    if (term.length < 1) { setUsers([]); return; }
     const t = setTimeout(() => {
-      api.get(`/users/search?q=${encodeURIComponent(q)}`).then((r) => setUsers(r.data.data.users)).catch(() => {});
+      api.get(`/users/search?q=${encodeURIComponent(term)}&limit=8`).then((r) => setUsers(r.data.data.users ?? [])).catch(() => {});
     }, 250);
     return () => clearTimeout(t);
   }, [q]);
@@ -45,28 +46,35 @@ export default function ExplorePage() {
       </header>
 
       <main className="p-3 pb-24 lg:pb-6">
-        {users.length > 0 && (
-          <div className="mb-4 space-y-1">
-            {users.map((u) => (
-              <button
-                key={u.id}
-                onClick={() => router.push(`/profile/${u.username}`)}
-                className="flex w-full items-center gap-3 rounded-xl2 p-2 text-left hover:bg-sf"
-              >
-                <Avatar username={u.username} size={40} />
-                <div>
-                  <div className="text-sm font-semibold text-tx">{u.displayName}</div>
-                  <div className="text-xs text-tx3">@{u.username}</div>
-                </div>
-              </button>
-            ))}
-          </div>
+        {q.trim().length > 0 ? (
+          <>
+            {users.length === 0 && (
+              <p className="py-10 text-center text-sm text-tx3">Aucun résultat pour « {q.trim()} »</p>
+            )}
+            <div className="space-y-1">
+              {users.map((u) => (
+                <button
+                  key={u.id}
+                  onClick={() => router.push(`/profile/${u.username}`)}
+                  className="flex w-full items-center gap-3 rounded-xl2 p-2 text-left hover:bg-sf"
+                >
+                  <Avatar username={u.username} size={40} />
+                  <div>
+                    <div className="text-sm font-semibold text-tx">{u.displayName}</div>
+                    <div className="text-xs text-tx3">@{u.username}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </>
+        ) : (
+          <>
+            <h2 className="serif mb-2 text-xl text-tx">Explorer</h2>
+            <div className="space-y-2.5">
+              {posts.map((p) => <PostCard key={p.id} post={p} />)}
+            </div>
+          </>
         )}
-
-        <h2 className="serif mb-2 text-xl text-tx">Explorer</h2>
-        <div className="space-y-2.5">
-          {posts.map((p) => <PostCard key={p.id} post={p} />)}
-        </div>
       </main>
     </AppShell>
   );

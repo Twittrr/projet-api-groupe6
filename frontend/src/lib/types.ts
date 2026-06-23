@@ -76,7 +76,7 @@ export interface Story {
 export interface Notification {
   _id: string;
   userId: string;
-  type: 'like' | 'comment' | 'follow' | 'mention';
+  type: 'like' | 'comment' | 'follow' | 'mention' | 'message';
   actor: { id: string; username: string };
   payload: Record<string, unknown>;
   read: boolean;

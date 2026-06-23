@@ -163,7 +163,7 @@ export default function ProfilePage() {
       <main className="pb-24 lg:pb-6">
         <section className="border-b border-bd p-4">
           <div className="flex items-start justify-between">
-            <Avatar username={profile.username} size={72} />
+            <Avatar username={profile.username} size={72} avatarUrl={profile.avatarUrl} />
             {isMe ? (
               <div className="flex items-center gap-2">
                 <button onClick={() => router.push('/settings')} className="flex items-center gap-1.5 rounded-full border border-bd2 px-4 py-1.5 text-sm font-semibold text-tx">

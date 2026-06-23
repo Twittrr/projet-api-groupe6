@@ -9,7 +9,7 @@
  */
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Heart, MessageCircle, Repeat2, Bookmark, MoreHorizontal } from 'lucide-react';
+import { Heart, MessageCircle, Repeat2, Bookmark, MoreHorizontal, Pencil, X } from 'lucide-react';
 import Avatar from './Avatar';
 import { api } from '@/lib/api';
 import { useAuth } from '@/store/auth';
@@ -73,6 +73,20 @@ export default function PostCard({ post: initial }: Readonly<{ post: Post }>) {
 
   const isTextOnly = !post.media?.length;
   const open = () => router.push(`/post/${post.id}`);
+  const isAuthor = !!user && user.id === post.authorId;
+
+  const [editing, setEditing] = useState(false);
+  const [editText, setEditText] = useState('');
+
+  async function saveEdit() {
+    const content = editText.trim();
+    if (!content) return;
+    try {
+      const r = await api.patch(`/posts/${post.id}`, { content });
+      setPost((p) => ({ ...p, content: r.data.data.post.content, tags: r.data.data.post.tags ?? p.tags }));
+      setEditing(false);
+    } catch { /* silent */ }
+  }
 
   async function toggleLike() {
     if (!user) { router.push('/login'); return; }
@@ -104,11 +118,13 @@ export default function PostCard({ post: initial }: Readonly<{ post: Post }>) {
 
   return (
     <article className="animate-sin relative rounded-[24px] border border-bd bg-sf p-[15px]">
-      <button
-        onClick={open}
-        aria-label={`${post.authorUsername}`}
-        className="absolute inset-0 rounded-[24px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ac"
-      />
+      {!editing && (
+        <button
+          onClick={open}
+          aria-label={`${post.authorUsername}`}
+          className="absolute inset-0 rounded-[24px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ac"
+        />
+      )}
 
       <div className="relative z-10">
         <div className="flex items-center gap-[11px]">
@@ -125,36 +141,74 @@ export default function PostCard({ post: initial }: Readonly<{ post: Post }>) {
             </div>
             <div className="text-[10px] text-tx4">{t('post.public')}</div>
           </div>
-          <button
-            onClick={inner(() => router.push(`/report?type=post&id=${post.id}`))}
-            aria-label={t('post.report')}
-            className="flex h-[30px] w-[30px] items-center justify-center text-tx3"
-          >
-            <MoreHorizontal size={15} />
-          </button>
+          {isAuthor ? (
+            <button
+              onClick={inner(() => { if (!editing) { setEditText(post.content); } setEditing((e) => !e); })}
+              aria-label={editing ? 'Annuler la modification' : 'Modifier'}
+              className="flex h-[30px] w-[30px] items-center justify-center text-tx3"
+            >
+              {editing ? <X size={15} /> : <Pencil size={15} />}
+            </button>
+          ) : (
+            <button
+              onClick={inner(() => router.push(`/report?type=post&id=${post.id}`))}
+              aria-label={t('post.report')}
+              className="flex h-[30px] w-[30px] items-center justify-center text-tx3"
+            >
+              <MoreHorizontal size={15} />
+            </button>
+          )}
         </div>
 
-        {isTextOnly ? (
-          <p className="serif mt-2.5 text-[19px] leading-[1.45] text-tx">{parseContent(post.content, user?.username)}</p>
+        {editing ? (
+          <div className="mt-2.5">
+            <textarea
+              value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+              autoFocus
+              rows={4}
+              maxLength={280}
+              className="w-full resize-none rounded-xl2 border border-bd2 bg-bg px-3 py-2 text-sm text-tx outline-none focus:border-ac"
+            />
+            <div className="mt-2 flex items-center justify-between">
+              <span className="text-xs text-tx4">{280 - editText.length}</span>
+              <div className="flex gap-2">
+                <button onClick={() => setEditing(false)} className="px-3 py-1.5 text-sm text-tx3 hover:text-tx">Annuler</button>
+                <button
+                  onClick={saveEdit}
+                  disabled={!editText.trim()}
+                  className="rounded-full bg-ac px-4 py-1.5 text-sm font-semibold text-white disabled:opacity-40"
+                >
+                  Enregistrer
+                </button>
+              </div>
+            </div>
+          </div>
         ) : (
           <>
-            <p className="mt-2.5 text-[13px] leading-[1.55] text-tx2">{parseContent(post.content, user?.username)}</p>
-            <MediaBlock media={post.media} />
-          </>
-        )}
+            {isTextOnly ? (
+              <p className="serif mt-2.5 text-[19px] leading-[1.45] text-tx">{parseContent(post.content, user?.username)}</p>
+            ) : (
+              <>
+                <p className="mt-2.5 text-[13px] leading-[1.55] text-tx2">{parseContent(post.content, user?.username)}</p>
+                <MediaBlock media={post.media} />
+              </>
+            )}
 
-        {post.tags?.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {post.tags.map((tag) => (
-              <button
-                key={tag}
-                onClick={inner(() => router.push(`/tag/${encodeURIComponent(tag)}`))}
-                className="rounded-full bg-sf2 px-2.5 py-0.5 text-[12px] text-ac"
-              >
-                #{tag}
-              </button>
-            ))}
-          </div>
+            {post.tags?.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {post.tags.map((tag) => (
+                  <button
+                    key={tag}
+                    onClick={inner(() => router.push(`/tag/${encodeURIComponent(tag)}`))}
+                    className="rounded-full bg-sf2 px-2.5 py-0.5 text-[12px] text-ac"
+                  >
+                    #{tag}
+                  </button>
+                ))}
+              </div>
+            )}
+          </>
         )}
 
         <div className="mt-[13px] flex items-center justify-between border-t border-bd pt-[11px]">

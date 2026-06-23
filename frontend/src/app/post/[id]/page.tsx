@@ -31,7 +31,12 @@ export default function ThreadPage() {
   useEffect(() => {
     if (!id) return;
     api.get(`/posts/${id}`).then((r) => setPost(r.data.data.post)).catch(() => setError('Post introuvable.'));
-    api.get(`/posts/${id}/comments`).then((r) => setComments(r.data.data.comments)).catch(() => {});
+    api.get(`/posts/${id}/comments`).then((r) => {
+      const loaded: Comment[] = r.data.data.comments;
+      setComments(loaded);
+      // Charge toutes les replies immédiatement sans attendre un clic
+      loaded.forEach((c) => loadReplies(c.id));
+    }).catch(() => {});
   }, [id]);
 
   async function send() {

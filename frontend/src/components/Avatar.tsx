@@ -1,28 +1,35 @@
 /**
  * @file Avatar.tsx
- * @brief Avatar « lettre » coloré, déterministe à partir du nom d'utilisateur.
- *
- * Reproduit les avatars de la maquette (carré arrondi, initiale serif blanche)
- * sans nécessiter de stockage d'image.
+ * @brief Avatar : photo de profil si disponible, sinon lettre colorée déterministe.
  */
-import { avatarColor, initials } from '@/lib/helpers';
+import { avatarColor, initials, mediaUrl } from '@/lib/helpers';
 
-/**
- * @brief Affiche l'avatar d'un utilisateur.
- * @param username Nom d'utilisateur servant de graine pour la couleur et l'initiale.
- * @param size Taille en pixels (40 par défaut).
- */
-export default function Avatar({ username, size = 40 }: Readonly<{ username: string; size?: number }>) {
+export default function Avatar({
+  username,
+  size = 40,
+  avatarUrl,
+}: Readonly<{ username: string; size?: number; avatarUrl?: string | null }>) {
+  const radius = size * 0.34;
+  const src = avatarUrl ? mediaUrl(avatarUrl) : '';
+
+  if (src) {
+    return (
+      <img
+        src={src}
+        alt=""
+        aria-hidden
+        width={size}
+        height={size}
+        className="flex-shrink-0 object-cover"
+        style={{ width: size, height: size, borderRadius: radius }}
+      />
+    );
+  }
+
   return (
     <div
       className="serif flex flex-shrink-0 items-center justify-center text-white"
-      style={{
-        width: size,
-        height: size,
-        borderRadius: size * 0.34,
-        background: avatarColor(username),
-        fontSize: size * 0.42,
-      }}
+      style={{ width: size, height: size, borderRadius: radius, background: avatarColor(username), fontSize: size * 0.42 }}
       aria-hidden
     >
       {initials(username)}

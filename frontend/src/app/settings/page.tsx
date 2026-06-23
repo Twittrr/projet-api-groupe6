@@ -3,9 +3,9 @@
  * @file settings/page.tsx
  * @brief Réglages : thème (Fx23), langue (Fx22), édition de profil (Fx10), modération, déconnexion.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Moon, Sun, Shield, LogOut, Globe } from 'lucide-react';
+import { Moon, Sun, Shield, LogOut, Globe, Camera } from 'lucide-react';
 import { api, apiError } from '@/lib/api';
 import { useRequireAuth } from '@/lib/useRequireAuth';
 import { useAuth } from '@/store/auth';
@@ -14,6 +14,7 @@ import { useLang } from '@/store/lang';
 import { useT } from '@/lib/useT';
 import type { Lang } from '@/lib/i18n';
 import AppHeader from '@/components/AppHeader';
+import Avatar from '@/components/Avatar';
 
 const LANGS: { value: Lang; flag: string }[] = [
   { value: 'fr', flag: '🇫🇷' },
@@ -31,12 +32,35 @@ export default function SettingsPage() {
   const [displayName, setDisplayName] = useState('');
   const [bio, setBio] = useState('');
   const [msg, setMsg] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (user) { setDisplayName(user.displayName || ''); setBio(user.bio || ''); }
   }, [user]);
 
   if (!ready || !user) return <div className="flex h-screen items-center justify-center text-tx3">{t('common.loading')}</div>;
+
+  async function uploadAvatar(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setMsg('');
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const up = await api.post('/posts/upload', form, { headers: { 'Content-Type': 'multipart/form-data' } });
+      const { url } = up.data.data;
+      const updated = await api.patch('/users/me', { avatarUrl: url });
+      setUser(updated.data.data.user);
+      setMsg('Photo de profil mise à jour ✓');
+    } catch {
+      setMsg('Impossible de mettre à jour la photo.');
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = '';
+    }
+  }
 
   async function save() {
     setMsg('');
@@ -101,6 +125,33 @@ export default function SettingsPage() {
         {/* Profil — Fx10 */}
         <section className="rounded-xl3 border border-bd bg-sf p-4">
           <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-tx3">{t('settings.profile')}</h2>
+
+          {/* Photo de profil */}
+          <div className="mb-4 flex items-center gap-4">
+            <button
+              onClick={() => fileRef.current?.click()}
+              disabled={uploading}
+              className="group relative flex-shrink-0"
+              aria-label="Changer la photo de profil"
+            >
+              <Avatar username={user.username} size={72} avatarUrl={user.avatarUrl} />
+              <span className="absolute inset-0 flex items-center justify-center rounded-[24px] bg-black/50 opacity-0 transition group-hover:opacity-100">
+                <Camera size={22} color="white" />
+              </span>
+            </button>
+            <div>
+              <p className="text-sm font-semibold text-tx">{user.displayName || user.username}</p>
+              <button
+                onClick={() => fileRef.current?.click()}
+                disabled={uploading}
+                className="mt-0.5 text-xs text-ac hover:underline disabled:opacity-50"
+              >
+                {uploading ? 'Envoi en cours…' : 'Changer la photo'}
+              </button>
+            </div>
+            <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={uploadAvatar} />
+          </div>
+
           <label htmlFor="displayName" className="mb-1 block text-xs text-tx3">{t('settings.displayName')}</label>
           <input
             id="displayName"

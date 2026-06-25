@@ -10,7 +10,7 @@ import { fakerFR as faker } from '@faker-js/faker';
 import {
   sequelize, User, Follow, connectMongo, Post, Comment, Like, Story, Notification, Reply,
 } from './db.js';
-import { TEXT_POSTS, QUOTES, IMAGE_CAPTIONS, BIOS, TAGS, GRADIENTS, COMMENTS, REPLIES } from './content.js';
+import { TEXT_POSTS, QUOTES, IMAGE_CAPTIONS, BIOS, GRADIENTS, COMMENTS, REPLIES } from './content.js';
 
 // ---- Paramètres ----
 const USER_COUNT = Number(process.env.SEED_USER_COUNT || 1000);
@@ -36,6 +36,53 @@ const rnd = (n) => Math.floor(Math.random() * n);
 const pick = (arr) => arr[rnd(arr.length)];
 const chance = (p) => Math.random() < p;
 const pastDate = (maxDaysAgo) => new Date(NOW - rnd(maxDaysAgo * DAY) - rnd(DAY));
+// ~40 % des posts datent des 7 derniers jours (fenêtre des tendances), le reste sur 60 j.
+const postDate = () => (chance(0.4) ? new Date(NOW - rnd(7 * DAY) - rnd(DAY)) : pastDate(60));
+
+// ---- Actualité (été 2026) : posts générés AVEC leur hashtag cohérent ----
+// Chaque post d'actualité parle réellement de son hashtag → la section Tendances
+// reste cohérente (un post sous #coupedumonde mentionne bien la Coupe du Monde).
+const WC_TEAMS = ["la France", "le Brésil", "l'Argentine", "l'Espagne", "le Portugal",
+  "les Pays-Bas", "le Maroc", "l'Allemagne", "l'Angleterre", "la Croatie", "le Japon", "le Sénégal"];
+const WC_STAGES = ['en huitièmes', 'en quarts', 'en demi-finale', 'vers la finale'];
+const TDF_STAGES = ["L'étape de montagne", 'Le contre-la-montre', "L'arrivée au sprint",
+  "L'étape pyrénéenne", 'La grande boucle'];
+const FESTIVALS = ['Le festival du coin', 'Les Eurockéennes', 'Le Hellfest', 'Solidays',
+  'Le festival de jazz', 'Le concert en plein air'];
+
+/** @brief Contraction française de « de » + article ("le Brésil" → "du Brésil"). */
+function deTeam(team) {
+  if (team.startsWith("l'")) return `de ${team}`;        // de l'Argentine
+  if (team.startsWith('les ')) return `des ${team.slice(4)}`; // des Pays-Bas
+  if (team.startsWith('le ')) return `du ${team.slice(3)}`;   // du Brésil
+  if (team.startsWith('la ')) return `de la ${team.slice(3)}`; // de la France
+  return `de ${team}`;
+}
+
+/** @brief Construit un post d'actualité varié, dont le hashtag colle au contenu. */
+function buildActuPost() {
+  const builders = [
+    () => ({ content: `Quel match ${deTeam(pick(WC_TEAMS))} hier soir, j'ai vibré jusqu'au bout ! #coupedumonde`, tags: ['coupedumonde'] }),
+    () => ({ content: `Les Bleus ${pick(WC_STAGES)}, mon canapé ne me reverra plus avant la fin du Mondial. #mondial2026`, tags: ['mondial2026', 'coupedumonde'] }),
+    () => ({ content: `Fan zone bondée pour ${pick(WC_TEAMS)} ce soir, jamais vu autant de drapeaux dans ma rue. #coupedumonde`, tags: ['coupedumonde'] }),
+    () => ({ content: 'Réveillé à 3h pour le match retransmis du Mondial. Aucun regret, que des cernes. #coupedumonde', tags: ['coupedumonde'] }),
+    () => ({ content: `${pick(TDF_STAGES)} du Tour aujourd'hui, quel spectacle dans les cols. #tourdefrance`, tags: ['tourdefrance'] }),
+    () => ({ content: 'Déjà mon pronostic maillot jaune au bureau, la saison de vélo est lancée. #tourdefrance', tags: ['tourdefrance'] }),
+    () => ({ content: `${28 + rnd(12)}°C à l'ombre, la canicule ne lâche rien. Hydratez-vous et pensez aux plus fragiles. #canicule`, tags: ['canicule'] }),
+    () => ({ content: 'Volets fermés le jour, fenêtres ouvertes la nuit : ma stratégie anti-canicule, vieille mais imparable. #canicule', tags: ['canicule'] }),
+    () => ({ content: "Encore une annonce d'IA cette semaine, le rythme est vertigineux. On a du mal à suivre. #ia", tags: ['ia'] }),
+    () => ({ content: "L'IA rédige mes mails, mais c'est toujours moi qui assume les bourdes. Drôle d'époque. #ia", tags: ['ia'] }),
+    () => ({ content: `${pick(FESTIVALS)} ce week-end, les pieds dans l'herbe et le sourire jusqu'aux oreilles. #festival`, tags: ['festival'] }),
+    () => ({ content: 'Soirée match en famille, trois générations devant le même écran. Le sport rassemble. #mondial2026', tags: ['mondial2026'] }),
+    () => ({ content: "Le mercato s'agite déjà alors que la Coupe du Monde n'est même pas finie. Le foot ne dort jamais. #coupedumonde", tags: ['coupedumonde'] }),
+    () => ({ content: 'Nouveau blockbuster vu hier soir, deux heures qui filent sans voir le temps passer. #cinema', tags: ['cinema'] }),
+    () => ({ content: "L'album de l'été tourne en boucle chez moi depuis trois jours. #musique", tags: ['musique'] }),
+    () => ({ content: 'Encore un été record côté thermomètre, le climat nous alerte clairement. #climat', tags: ['climat'] }),
+    () => ({ content: 'Grève des transports demain, télétravail forcé pour tout le monde. #greve', tags: ['greve'] }),
+    () => ({ content: "Le panier de courses qui grimpe encore ce mois-ci, l'inflation pèse sur le moral. #inflation", tags: ['inflation'] }),
+  ];
+  return pick(builders)();
+}
 
 async function connectPgWithRetry(retries = 15, delayMs = 3000) {
   for (let i = 1; i <= retries; i++) {
@@ -115,37 +162,56 @@ function userRecord(username, displayName, role, passwordHash) {
 }
 
 /**
- * @brief Construit un post aléatoire (texte, citation, image ou galerie de dégradés).
+ * @brief Construit un post aléatoire.
+ *        Forte part d'actualité (surtout récente) → tendances riches ET cohérentes ;
+ *        les posts génériques n'ont aucun hashtag plaqué dans le texte.
  * @param author Auteur du post.
  * @returns Document `Post` (compteurs initialisés à 0).
  */
 function buildPost(author) {
+  const createdAt = postDate();
+  const recent = NOW - createdAt.getTime() < 8 * DAY;
+
+  // Posts d'actualité : majoritaires sur les posts récents (alimentent les tendances),
+  // plus rares sur les anciens.
+  if (chance(recent ? 0.5 : 0.15)) {
+    const a = buildActuPost();
+    return {
+      _id: new mongoose.Types.ObjectId(),
+      authorId: author.id,
+      authorUsername: author.username,
+      content: a.content,
+      tags: [...new Set(a.tags)],
+      media: [],
+      likeCount: 0,
+      commentCount: 0,
+      createdAt,
+      updatedAt: createdAt,
+    };
+  }
+
+  // Posts « intemporels » : texte, citation, image ou galerie — sans hashtag plaqué.
   const r = Math.random();
   let content; let media = [];
   if (r < 0.55) {
     content = pick(TEXT_POSTS);
-  } else if (r < 0.72) {
+  } else if (r < 0.7) {
     const [q, cite] = pick(QUOTES);
     content = `${q} — ${cite}`;
-  } else if (r < 0.88) {
+  } else if (r < 0.86) {
     content = pick(IMAGE_CAPTIONS);
     media = [{ url: pick(GRADIENTS), type: 'image' }];
   } else {
     content = pick(IMAGE_CAPTIONS);
     media = [0, 1, 2].map(() => ({ url: pick(GRADIENTS), type: 'image' }));
   }
-  const tags = [];
-  const nTags = rnd(4);
-  for (let i = 0; i < nTags; i++) tags.push(pick(TAGS));
-  if (chance(0.35)) content += ` #${pick(TAGS)}`;
 
-  const createdAt = pastDate(60);
   return {
     _id: new mongoose.Types.ObjectId(),
     authorId: author.id,
     authorUsername: author.username,
     content,
-    tags: [...new Set(tags)],
+    tags: [],
     media,
     likeCount: 0,
     commentCount: 0,
@@ -155,22 +221,40 @@ function buildPost(author) {
 }
 
 /**
- * @brief Construit le graphe social (5 à 40 abonnements par utilisateur, sans doublon).
- * @param users Population générée.
+ * @brief Construit le graphe social avec un effet « célébrité » (loi de puissance).
+ *        Les comptes vedettes et un noyau d'influenceurs concentrent la majorité des abonnés.
+ * @param users Population générée (vedettes en tête de tableau).
  * @returns Tableau de relations `Follow`.
  */
 function buildFollows(users) {
   const follows = [];
   const seen = new Set();
+  const N = users.length;
+
+  // Pool pondéré : plus un compte a un poids élevé, plus il est tiré comme cible.
+  // → vedettes ≈ 700-800 abonnés, influenceurs ≈ 200-300, masse ≈ quelques-uns.
+  const INFLUENCERS = Math.min(60, N);
+  const pool = [];
+  for (let i = 0; i < N; i++) {
+    let weight = 1;
+    if (i < FEATURED.length) weight = 900;              // stars de la maquette
+    else if (i < INFLUENCERS) weight = 260 - i * 3;     // influenceurs (poids dégressif)
+    for (let w = 0; w < weight; w++) pool.push(i);
+  }
+
   for (const u of users) {
-    const count = 5 + rnd(35);
-    for (let i = 0; i < count; i++) {
-      const target = users[rnd(users.length)];
+    const count = 8 + rnd(40); // 8 à 47 abonnements
+    let added = 0;
+    let attempts = 0;
+    while (added < count && attempts < count * 5) {
+      attempts++;
+      const target = users[pool[rnd(pool.length)]];
       const key = `${u.id}:${target.id}`;
       if (target.id === u.id || seen.has(key)) continue;
       seen.add(key);
-      const createdAt = pastDate(60);
+      const createdAt = pastDate(120);
       follows.push({ id: randomUUID(), followerId: u.id, followedId: target.id, createdAt, updatedAt: createdAt });
+      added++;
     }
   }
   return follows;
@@ -178,18 +262,33 @@ function buildFollows(users) {
 
 /**
  * @brief Génère likes et commentaires d'un post et met à jour ses compteurs.
+ *        L'engagement croît avec la popularité de l'auteur (nombre d'abonnés).
  * @param post Post cible (compteurs modifiés en place).
  * @param users Population pour tirer les auteurs.
+ * @param authorFollowers Nombre d'abonnés de l'auteur.
  * @returns `{ likes, comments }` à insérer.
  */
-function buildPostInteractions(post, users) {
-  // Likes : distribution réaliste — quelques posts « percent » avec 100+ likes
+function buildPostInteractions(post, users, authorFollowers) {
+  // Distribution réaliste : les comptes très suivis cartonnent, les petits comptes
+  // ont surtout peu de likes — avec quelques posts « viraux » malgré tout.
   let likeTarget;
   const r = Math.random();
-  if (r < 0.05) likeTarget = 100 + rnd(80);      // viral
-  else if (r < 0.2) likeTarget = 20 + rnd(80);   // populaire
-  else if (r < 0.5) likeTarget = 5 + rnd(20);    // moyen
-  else likeTarget = rnd(5);                        // peu ou pas de likes
+  if (authorFollowers > 400) {
+    likeTarget = 120 + rnd(330);                         // stars : 120-450 likes
+  } else if (authorFollowers > 120) {
+    likeTarget = 40 + rnd(150);                          // influenceurs : 40-190
+  } else if (authorFollowers > 20) {
+    likeTarget = r < 0.1 ? 50 + rnd(110) : 5 + rnd(35);  // confirmés
+  } else if (r < 0.04) {
+    likeTarget = 80 + rnd(110);                          // petit compte viral
+  } else if (r < 0.2) {
+    likeTarget = 15 + rnd(45);
+  } else if (r < 0.5) {
+    likeTarget = 3 + rnd(15);
+  } else {
+    likeTarget = rnd(4);
+  }
+  likeTarget = Math.min(likeTarget, users.length - 1);
 
   const likers = new Set();
   for (let i = 0; i < likeTarget; i++) likers.add(users[rnd(users.length)].id);
@@ -201,7 +300,9 @@ function buildPostInteractions(post, users) {
   // Commentaires — les posts populaires en ont plus
   const isPopular = post.likeCount >= 5;
   let commentCount;
-  if (isPopular) {
+  if (post.likeCount >= 80) {
+    commentCount = 6 + rnd(20);
+  } else if (isPopular) {
     commentCount = chance(0.7) ? 2 + rnd(8) : rnd(3);
   } else {
     commentCount = chance(0.4) ? rnd(4) : 0;
@@ -228,21 +329,27 @@ function buildPostInteractions(post, users) {
 
 /**
  * @brief Construit posts, likes et commentaires pour toute la population.
+ *        Le volume de publications dépend de la popularité (les stars publient plus).
  * @param users Population générée.
+ * @param followerCount Map id → nombre d'abonnés.
  * @returns `{ posts, likes, comments }`.
  */
-function buildContent(users) {
+function buildContent(users, followerCount) {
   const posts = [];
   for (const u of users) {
-    const isFeatured = FEATURED.some((f) => u.username === f.username);
-    // Les vedettes postent davantage ; les autres entre 0 et 12 posts
-    const count = isFeatured ? 10 + rnd(10) : 1 + rnd(11);
+    const fc = followerCount.get(u.id) || 0;
+    let count;
+    if (fc > 400) count = 14 + rnd(12);       // stars : prolifiques
+    else if (fc > 120) count = 8 + rnd(10);   // influenceurs
+    else if (fc > 20) count = 3 + rnd(8);     // confirmés
+    else count = 1 + rnd(6);                  // masse
     for (let i = 0; i < count; i++) posts.push(buildPost(u));
   }
   const likes = [];
   const comments = [];
   for (const post of posts) {
-    const interactions = buildPostInteractions(post, users);
+    const fc = followerCount.get(post.authorId) || 0;
+    const interactions = buildPostInteractions(post, users, fc);
     likes.push(...interactions.likes);
     comments.push(...interactions.comments);
   }
@@ -377,7 +484,14 @@ async function main() {
   }
   console.log(`[seeder] ${follows.length} relations de suivi insérées`);
 
-  const { posts, likes, comments } = buildContent(users);
+  // Nombre d'abonnés par compte (alimente le volume de posts et l'engagement)
+  const followerCount = new Map();
+  for (const f of follows) followerCount.set(f.followedId, (followerCount.get(f.followedId) || 0) + 1);
+  const topFollowed = [...followerCount.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5)
+    .map(([id, c]) => `@${users.find((u) => u.id === id)?.username}(${c})`).join(', ');
+  console.log(`[seeder] Comptes les plus suivis : ${topFollowed}`);
+
+  const { posts, likes, comments } = buildContent(users, followerCount);
   await insertChunks(Post, posts, 4000, 'posts');
   await insertChunks(Like, likes, 5000, 'likes');
   await insertChunks(Comment, comments, 5000, 'commentaires');

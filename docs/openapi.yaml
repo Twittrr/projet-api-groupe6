@@ -1,0 +1,556 @@
+openapi: 3.0.3
+info:
+  title: Breezy API
+  version: 1.0.0
+  description: >
+    API REST du réseau social Breezy (architecture microservices).
+    Toutes les routes sont exposées via le gateway sous le préfixe `/api/v1`.
+    L'alias historique `/api` (sans version) reste accepté pour rétro-compatibilité.
+    Format de réponse homogène : `{ data, error, meta }`.
+  license:
+    name: Projet pédagogique CESI
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Gateway local (Docker Compose) — routes versionnées
+  - url: http://localhost:8080/api
+    description: Alias non versionné (rétro-compatibilité)
+
+tags:
+  - name: Auth
+    description: Inscription, connexion, session (service Auth)
+  - name: Users
+    description: Profils et graphe social (service Users)
+  - name: Posts
+    description: Messages, commentaires, likes, stories, signalements (service Posts)
+  - name: Notifications
+    description: Notifications utilisateur (service Notifications)
+  - name: Conversations
+    description: Messagerie privée 1:1 et groupes (service Conversations)
+
+security:
+  - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Envelope:
+      type: object
+      properties:
+        data: { nullable: true }
+        error:
+          nullable: true
+          type: object
+          properties:
+            code: { type: string }
+            message: { type: string }
+        meta: { nullable: true }
+    Error:
+      allOf:
+        - $ref: '#/components/schemas/Envelope'
+      example:
+        data: null
+        error: { code: VALIDATION_ERROR, message: Validation des champs échouée. }
+        meta: null
+    User:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        username: { type: string, maxLength: 30 }
+        displayName: { type: string, maxLength: 60 }
+        email: { type: string, format: email }
+        role: { type: string, enum: [user, moderator, admin] }
+        status: { type: string, enum: [active, suspended, banned] }
+        bio: { type: string, maxLength: 160 }
+        avatarUrl: { type: string, nullable: true }
+        language: { type: string, enum: [fr, en] }
+        theme: { type: string, enum: [light, dark] }
+        createdAt: { type: string, format: date-time }
+    Post:
+      type: object
+      properties:
+        id: { type: string }
+        authorId: { type: string, format: uuid }
+        content: { type: string, maxLength: 280 }
+        tags:
+          type: array
+          items: { type: string }
+        media:
+          type: array
+          items: { type: string }
+        likeCount: { type: integer }
+        commentCount: { type: integer }
+        createdAt: { type: string, format: date-time }
+  responses:
+    Unauthorized:
+      description: Non authentifié
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Forbidden:
+      description: Droits insuffisants (RBAC)
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotFound:
+      description: Ressource introuvable
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Validation:
+      description: Erreur de validation
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+
+paths:
+  # ---------------- Auth ----------------
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Inscription (Fx1)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, email, password]
+              properties:
+                username: { type: string, minLength: 3, maxLength: 30 }
+                email: { type: string, format: email }
+                password: { type: string, minLength: 8 }
+      responses:
+        '201': { description: Compte créé (renvoie user + accessToken, pose le cookie de refresh) }
+        '422': { $ref: '#/components/responses/Validation' }
+        '409': { description: Username ou email déjà utilisé }
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Connexion (Fx2)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [identifier, password]
+              properties:
+                identifier: { type: string, description: username ou email }
+                password: { type: string }
+      responses:
+        '200': { description: Authentifié (user + accessToken + cookie de refresh) }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { description: Trop de tentatives (rate-limit) }
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Renouvelle l'accessToken (rotation du refresh token)
+      security: []
+      responses:
+        '200': { description: Nouvel accessToken }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Invalide le cookie de refresh
+      security: []
+      responses:
+        '200': { description: Déconnecté }
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Profil de la session courante
+      responses:
+        '200': { description: Utilisateur courant }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /auth/users:
+    post:
+      tags: [Auth]
+      summary: Création de compte avec rôle (Fx1 — admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, email, password, role]
+              properties:
+                username: { type: string }
+                email: { type: string, format: email }
+                password: { type: string }
+                role: { type: string, enum: [user, moderator, admin] }
+      responses:
+        '201': { description: Compte créé }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  # ---------------- Users ----------------
+  /users/search:
+    get:
+      tags: [Users]
+      summary: Recherche d'utilisateurs
+      security: []
+      parameters:
+        - { name: q, in: query, schema: { type: string } }
+      responses:
+        '200': { description: Liste d'utilisateurs }
+  /users/suggestions:
+    get:
+      tags: [Users]
+      summary: Suggestions « à suivre »
+      responses:
+        '200': { description: Suggestions }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /users/me:
+    patch:
+      tags: [Users]
+      summary: Met à jour son profil (Fx10)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                displayName: { type: string, maxLength: 60 }
+                bio: { type: string, maxLength: 160 }
+                avatarUrl: { type: string }
+      responses:
+        '200': { description: Profil mis à jour }
+        '422': { $ref: '#/components/responses/Validation' }
+  /users/{username}:
+    get:
+      tags: [Users]
+      summary: Profil public + compteurs (Fx10)
+      security: []
+      parameters:
+        - { name: username, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Profil public }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /users/{id}/follow:
+    post:
+      tags: [Users]
+      summary: Suivre (Fx9) — émet une notification (Fx16)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: Abonnement créé }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { description: Trop d'actions (rate-limit écriture) }
+    delete:
+      tags: [Users]
+      summary: Ne plus suivre
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: Abonnement supprimé }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /users/{id}/followers:
+    get:
+      tags: [Users]
+      summary: Liste des abonnés
+      security: []
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Liste }
+  /users/{id}/following:
+    get:
+      tags: [Users]
+      summary: Liste des abonnements
+      security: []
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Liste }
+  /users/{id}/status:
+    patch:
+      tags: [Users]
+      summary: Suspendre / bannir / réactiver (Fx21 — modérateur/admin)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [active, suspended, banned] }
+      responses:
+        '200': { description: Statut mis à jour }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  # ---------------- Posts ----------------
+  /posts:
+    post:
+      tags: [Posts]
+      summary: Publier un message (Fx3)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content]
+              properties:
+                content: { type: string, maxLength: 280 }
+                tags: { type: array, items: { type: string } }
+                media: { type: array, items: { type: string } }
+      responses:
+        '201': { description: Post créé }
+        '422': { $ref: '#/components/responses/Validation' }
+  /posts/feed:
+    get:
+      tags: [Posts]
+      summary: Flux chronologique des suivis (Fx5)
+      parameters:
+        - { name: before, in: query, schema: { type: string, format: date-time } }
+      responses:
+        '200': { description: Page du flux }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /posts/explore:
+    get:
+      tags: [Posts]
+      summary: Posts récents de la plateforme
+      security: []
+      responses:
+        '200': { description: Liste }
+  /posts/{id}:
+    get:
+      tags: [Posts]
+      summary: Détail d'un post (Fx4)
+      security: []
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Post }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [Posts]
+      summary: Modifier un post (Fx4 — auteur)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content: { type: string, maxLength: 280 }
+      responses:
+        '200': { description: Post modifié }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    delete:
+      tags: [Posts]
+      summary: Supprimer un post (auteur ou modérateur)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Supprimé }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /posts/user/{userId}:
+    get:
+      tags: [Posts]
+      summary: Posts d'un utilisateur (Fx11)
+      security: []
+      parameters:
+        - { name: userId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Liste paginée }
+  /posts/tag/{tag}:
+    get:
+      tags: [Posts]
+      summary: Recherche par tag (Fx13)
+      security: []
+      parameters:
+        - { name: tag, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Liste }
+  /posts/tags/trending:
+    get:
+      tags: [Posts]
+      summary: Tags tendances
+      security: []
+      responses:
+        '200': { description: Liste de tags }
+  /posts/{id}/like:
+    post:
+      tags: [Posts]
+      summary: Liker un post (Fx6) — émet une notification (Fx15)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Like enregistré }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    delete:
+      tags: [Posts]
+      summary: Retirer le like
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Like retiré }
+  /posts/{id}/comments:
+    get:
+      tags: [Posts]
+      summary: Commentaires du post (Fx7)
+      security: []
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Liste }
+    post:
+      tags: [Posts]
+      summary: Répondre à un post (Fx7) / à un commentaire en thread (Fx8)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content]
+              properties:
+                content: { type: string, maxLength: 280 }
+                parentCommentId: { type: string, nullable: true }
+      responses:
+        '201': { description: Commentaire créé }
+  /posts/upload:
+    post:
+      tags: [Posts]
+      summary: Upload média (Fx18/Fx19)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        '201': { description: Média uploadé (URL /uploads/...) }
+        '400': { description: Type ou taille de fichier non autorisé }
+  /posts/reports:
+    post:
+      tags: [Posts]
+      summary: Signaler un contenu (Fx20)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [targetType, targetId, reason]
+              properties:
+                targetType: { type: string, enum: [post, comment, user] }
+                targetId: { type: string }
+                reason: { type: string }
+      responses:
+        '201': { description: Signalement enregistré }
+    get:
+      tags: [Posts]
+      summary: File de modération (modérateur/admin)
+      parameters:
+        - { name: status, in: query, schema: { type: string, enum: [open, resolved] } }
+      responses:
+        '200': { description: Liste }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  # ---------------- Notifications ----------------
+  /notifications:
+    get:
+      tags: [Notifications]
+      summary: Mes notifications (Fx14/15/16)
+      responses:
+        '200': { description: Liste }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /notifications/unread-count:
+    get:
+      tags: [Notifications]
+      summary: Nombre de notifications non lues (badge)
+      responses:
+        '200': { description: Compteur }
+  /notifications/{id}/read:
+    patch:
+      tags: [Notifications]
+      summary: Marquer une notification comme lue
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Marquée comme lue }
+  /notifications/read-all:
+    post:
+      tags: [Notifications]
+      summary: Tout marquer comme lu
+      responses:
+        '200': { description: OK }
+
+  # ---------------- Conversations ----------------
+  /conversations:
+    get:
+      tags: [Conversations]
+      summary: Mes conversations (Fx17)
+      responses:
+        '200': { description: Liste }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [Conversations]
+      summary: Créer une conversation 1:1 ou de groupe (Fx17)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [memberIds]
+              properties:
+                memberIds: { type: array, items: { type: string, format: uuid } }
+                title: { type: string, nullable: true }
+      responses:
+        '201': { description: Conversation créée }
+  /conversations/{id}/messages:
+    get:
+      tags: [Conversations]
+      summary: Messages d'une conversation
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Liste de messages }
+    post:
+      tags: [Conversations]
+      summary: Envoyer un message (≤ 2000 caractères)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content]
+              properties:
+                content: { type: string, maxLength: 2000 }
+      responses:
+        '201': { description: Message envoyé }
+  /conversations/{id}/read:
+    patch:
+      tags: [Conversations]
+      summary: Marquer la conversation comme lue
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: OK }
+  /conversations/unread-count:
+    get:
+      tags: [Conversations]
+      summary: Nombre de messages non lus (badge)
+      responses:
+        '200': { description: Compteur }

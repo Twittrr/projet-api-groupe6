@@ -1,9 +1,12 @@
 # Référence API — Breezy
 
-Toutes les routes sont préfixées par `/api` et exposées via le gateway (`http://localhost:8080`).
+Toutes les routes sont préfixées par `/api/v1` et exposées via le gateway (`http://localhost:8080`).
+L'alias historique `/api/...` (sans version) reste accepté pour la rétro-compatibilité.
 Format de réponse homogène : `{ "data": ..., "error": ..., "meta": ... }`.
 Authentification : en-tête `Authorization: Bearer <accessToken>` (sauf routes publiques).
 
+> Spécification machine : [`docs/openapi.yaml`](openapi.yaml) (OpenAPI 3.0).
+>
 > Codes HTTP : `200` OK · `201` Créé · `400` Requête invalide · `401` Non authentifié ·
 > `403` Interdit (RBAC) · `404` Introuvable · `409` Conflit · `422` Validation · `429` Rate-limit.
 

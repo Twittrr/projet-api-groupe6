@@ -25,14 +25,18 @@ exposée derrière un **reverse proxy / load balancer**.
     └──────────────┘  └──────┬───────┘  └──────┬───────┘  └────────┬─────────┘
                              │                  │                   │
                              ▼                  ▼                   ▼
-                       ┌──────────────────────────┐         ┌──────────────┐
-                       │   PostgreSQL (Sequelize) │         │   MongoDB     │
-                       │   users, follows         │         │ (Mongoose)    │
-                       └──────────────────────────┘         │ posts,        │
-                                                            │ comments,     │
-                       ┌──────────────────────────┐         │ likes, reports│
-                       │ Service Notifications     │────────▶│ notifications │
-                       │ Express :4004 (Mongoose)  │         └──────────────┘
+                       ┌──────────────────────────┐         ┌───────────────┐
+                       │   PostgreSQL (Sequelize) │         │    MongoDB     │
+                       │   users, follows         │         │  (Mongoose)    │
+                       └──────────────────────────┘         │  posts,        │
+                                                            │  comments,     │
+                       ┌──────────────────────────┐         │  likes, reports│
+                       │ Service Notifications     │────────▶│  notifications │
+                       │ Express :4004 (Mongoose)  │         │  conversations,│
+                       └──────────────────────────┘         │  messages      │
+                       ┌──────────────────────────┐         └───────▲────────┘
+                       │ Service Conversations     │─────────────────┘
+                       │ Express :4005 (Mongoose)  │  messagerie privée (Fx17)
                        └──────────────────────────┘
 ```
 
@@ -44,6 +48,11 @@ exposée derrière un **reverse proxy / load balancer**.
 | **Users** | Node.js + Express | PostgreSQL (Sequelize) |
 | **Posts** | Node.js + Express + Multer | MongoDB (Mongoose) |
 | **Notifications** | Node.js + Express | MongoDB (Mongoose) |
+| **Conversations** | Node.js + Express | MongoDB (Mongoose) |
+
+> **Versionnage de l'API** : toutes les routes sont exposées sous `/api/v1/...`
+> (ex. `/api/v1/auth/login`). L'alias non versionné `/api/...` reste accepté pour la
+> rétro-compatibilité, mais les nouveaux clients doivent cibler `/api/v1`.
 
 📄 **Spécifications détaillées** : [`docs/SPECIFICATIONS-TECHNICO-FONCTIONNELLES.md`](docs/SPECIFICATIONS-TECHNICO-FONCTIONNELLES.md)
 📡 **Référence API** : [`docs/API.md`](docs/API.md)

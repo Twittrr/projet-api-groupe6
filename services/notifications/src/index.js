@@ -9,6 +9,7 @@ import jwt from 'jsonwebtoken';
 import rateLimit from 'express-rate-limit';
 import mongoose from 'mongoose';
 import { z } from 'zod';
+import { fileURLToPath } from 'node:url';
 import { env } from './config.js';
 import { Notification } from './model.js';
 
@@ -46,7 +47,7 @@ function requireInternal(req, res, next) {
   next();
 }
 
-function createApp() {
+export function createApp() {
   const app = express();
   app.set('trust proxy', 1);
   app.use(helmet());
@@ -139,10 +140,14 @@ async function connectWithRetry(retries = 10, delayMs = 3000) {
   }
 }
 
-try {
-  await connectWithRetry();
-  createApp().listen(env.port, () => console.log(`[notifications] démarré sur le port ${env.port}`));
-} catch (err) {
-  console.error('[notifications] Échec du démarrage :', err);
-  process.exit(1);
+// Démarrage uniquement quand le fichier est exécuté directement (pas à l'import, ex. tests).
+const isMain = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
+if (isMain) {
+  try {
+    await connectWithRetry();
+    createApp().listen(env.port, () => console.log(`[notifications] démarré sur le port ${env.port}`));
+  } catch (err) {
+    console.error('[notifications] Échec du démarrage :', err);
+    process.exit(1);
+  }
 }

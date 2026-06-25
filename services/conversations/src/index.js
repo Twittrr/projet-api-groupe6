@@ -8,13 +8,14 @@ import helmet from 'helmet';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import mongoose from 'mongoose';
+import { fileURLToPath } from 'node:url';
 import { env } from './config/env.js';
 import conversationsRouter from './routes/conversations.routes.js';
 
 const fail = (res, status, code, message) =>
   res.status(status).json({ data: null, error: { code, message }, meta: null });
 
-function createApp() {
+export function createApp() {
   const app = express();
   app.set('trust proxy', 1);
   app.use(helmet());
@@ -55,10 +56,14 @@ async function connectWithRetry(retries = 10, delayMs = 3000) {
   }
 }
 
-try {
-  await connectWithRetry();
-  createApp().listen(env.port, () => console.log(`[conversations] démarré sur le port ${env.port}`));
-} catch (err) {
-  console.error('[conversations] Échec du démarrage :', err);
-  process.exit(1);
+// Démarrage uniquement quand le fichier est exécuté directement (pas à l'import, ex. tests).
+const isMain = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
+if (isMain) {
+  try {
+    await connectWithRetry();
+    createApp().listen(env.port, () => console.log(`[conversations] démarré sur le port ${env.port}`));
+  } catch (err) {
+    console.error('[conversations] Échec du démarrage :', err);
+    process.exit(1);
+  }
 }

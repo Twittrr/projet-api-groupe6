@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        service: [auth, users, posts, notifications]
+        service: [auth, users, posts, notifications, conversations]
     defaults:
       run:
         working-directory: services/${{ matrix.service }}
@@ -30,8 +30,8 @@ jobs:
       - name: Vérification syntaxe (node --check)
         run: |
           for f in $(find src -name '*.js'); do node --check "$f"; done
-      - name: Tests
-        run: npm test --if-present
+      - name: Tests (unitaires + smoke)
+        run: npm test
 
   # -----------------------------------------------------------
   # Lint + build du frontend

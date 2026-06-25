@@ -89,9 +89,13 @@ docker compose --profile seed run --rm seeder
 ### Scaler un service (load balancing)
 
 ```bash
-docker compose up --scale posts=3
-# Nginx répartit automatiquement les requêtes /api/posts entre les 3 instances.
+docker compose up -d --scale posts=3
+# Nginx répartit les requêtes /api/posts entre les 3 répliques (resolver DNS Docker
+# + proxy_pass dynamique — cf. gateway/nginx.conf). Vérifier la répartition :
+docker compose logs gateway | grep '/api/posts'   # $upstream_addr doit varier
 ```
+
+> Détails et limites de montée en charge : [`docs/SCALABILITE.md`](docs/SCALABILITE.md).
 
 ---
 
@@ -132,9 +136,25 @@ Matrice de permissions complète : section 6 des spécifications.
 │   ├── posts/                  # posts, commentaires, likes, signalements (MongoDB)
 │   └── notifications/          # notifications (MongoDB)
 ├── frontend/                   # application Next.js
-├── docs/                       # spécifications, API, architecture
-└── .github/                    # CI (Actions) + Dependabot
+├── azure/                      # provisioning Azure Container Apps (provision.sh)
+├── docs/                       # spécifications, API, architecture, déploiement
+└── .github/                    # CI + CD (Actions) + Dependabot
 ```
+
+---
+
+## 🔄 CI/CD
+
+- **CI** (`.github/workflows/ci.yml`, sur push/PR) : tests `node:test` (unitaires +
+  smoke) de chaque microservice, lint + build du frontend, puis `docker compose build`.
+
+  ```bash
+  cd services/<svc> && npm install && npm test   # lancer les tests en local
+  ```
+- **CD** (`.github/workflows/release.yml`, **manuel**) : build et push des images sur
+  **Docker Hub**, puis (option `deploy`) déploiement sur **Azure Container Apps**.
+
+📄 Guide de déploiement complet : [`docs/DEPLOIEMENT-AZURE.md`](docs/DEPLOIEMENT-AZURE.md).
 
 ---
 

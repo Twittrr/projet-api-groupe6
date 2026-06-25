@@ -16,6 +16,8 @@ export const env = {
     name: process.env.POSTGRES_DB || 'breezy',
     user: process.env.POSTGRES_USER || 'breezy',
     password: process.env.POSTGRES_PASSWORD || 'breezy',
+    // TLS requis par les bases managées (ex. Azure Database for PostgreSQL).
+    ssl: process.env.POSTGRES_SSL === 'true',
   },
   isProd: (process.env.NODE_ENV || 'development') === 'production',
 };

@@ -1,0 +1,108 @@
+name: Release — build, push (Docker Hub) & deploy (Azure)
+
+# Déclenchement MANUEL uniquement (aucun push/déploiement automatique).
+#   - "Run workflow" depuis l'onglet Actions de GitHub.
+#   - Cocher `deploy` pour enchaîner le déploiement Azure après le push des images.
+on:
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: "Déployer sur Azure Container Apps après le push ?"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  # -----------------------------------------------------------
+  # Build + push des images sur Docker Hub (matrice)
+  # Tags : :latest  et  :sha-<commit>  (immuable, utilisé par le deploy)
+  # -----------------------------------------------------------
+  build-push:
+    name: Build & push — ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { service: auth,          context: services/auth }
+          - { service: users,         context: services/users }
+          - { service: posts,         context: services/posts }
+          - { service: notifications, context: services/notifications }
+          - { service: conversations, context: services/conversations }
+          - { service: frontend,      context: frontend }
+          - { service: gateway,       context: gateway }
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Login Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Métadonnées (tags + labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ secrets.DOCKERHUB_NAMESPACE }}/breezy-${{ matrix.service }}
+          tags: |
+            type=raw,value=latest
+            type=sha,prefix=sha-,format=long
+
+      - name: Build & push
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # NEXT_PUBLIC_API_URL n'est consommé que par le frontend (ignoré ailleurs).
+          build-args: |
+            NEXT_PUBLIC_API_URL=/api
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # -----------------------------------------------------------
+  # Déploiement Azure Container Apps (optionnel, gated)
+  # Ne s'exécute que si l'input `deploy` est coché ET après build-push.
+  # L'environnement `production` doit exiger une approbation manuelle
+  # (Settings > Environments > production > Required reviewers).
+  # -----------------------------------------------------------
+  deploy-azure:
+    name: Deploy → Azure Container Apps
+    needs: build-push
+    if: ${{ inputs.deploy }}
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      id-token: write   # OIDC (federated credentials)
+      contents: read
+    steps:
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Mise à jour des Container Apps (image = sha du commit)
+        uses: azure/cli@v2
+        with:
+          azcliversion: latest
+          inlineScript: |
+            set -euo pipefail
+            RG="${{ vars.AZURE_RESOURCE_GROUP }}"
+            NS="${{ secrets.DOCKERHUB_NAMESPACE }}"
+            TAG="sha-${{ github.sha }}"
+            for svc in auth users posts notifications conversations frontend gateway; do
+              echo "::group::Déploiement breezy-$svc"
+              az containerapp update \
+                --name "breezy-$svc" \
+                --resource-group "$RG" \
+                --image "docker.io/$NS/breezy-$svc:$TAG"
+              echo "::endgroup::"
+            done

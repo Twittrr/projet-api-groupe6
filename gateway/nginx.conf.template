@@ -1,0 +1,96 @@
+# =============================================================
+# Breezy — Gateway Nginx (TEMPLATE pour déploiement cloud)
+# Les ${*_UPSTREAM} sont substitués au démarrage par l'entrypoint nginx (envsubst).
+# Voir gateway/Dockerfile. La version LOCALE (avec load balancing des répliques
+# docker-compose) est gateway/nginx.conf, montée en volume par docker-compose.
+# =============================================================
+worker_processes auto;
+
+events {
+  worker_connections 1024;
+}
+
+http {
+  include       /etc/nginx/mime.types;
+  default_type  application/octet-stream;
+
+  server_tokens off;
+
+  log_format breezy '$remote_addr - [$time_iso8601] "$request" '
+                    '$status ${body_bytes_sent}o ${request_time}s '
+                    '-> $upstream_addr "$http_user_agent"';
+  access_log /var/log/nginx/access.log breezy;
+
+  sendfile on;
+  keepalive_timeout 65;
+  client_max_body_size 12M;
+
+  gzip on;
+  gzip_types text/plain text/css application/json application/javascript
+             application/xml image/svg+xml;
+  gzip_min_length 512;
+
+  # Rate limiting par IP (cf. nginx.conf local pour le détail des zones)
+  limit_req_zone $binary_remote_addr zone=auth_limit:10m   rate=5r/s;
+  limit_req_zone $binary_remote_addr zone=api_limit:10m    rate=20r/s;
+  limit_req_zone $binary_remote_addr zone=upload_limit:10m rate=2r/s;
+  limit_req_status 429;
+
+  # -----------------------------------------------------------
+  # Upstreams — paramétrés par variables d'environnement.
+  # ACA : AUTH_UPSTREAM=breezy-auth (résolution par nom d'app, LB géré par ACA).
+  # -----------------------------------------------------------
+  upstream auth_svc          { server ${AUTH_UPSTREAM};          }
+  upstream users_svc         { server ${USERS_UPSTREAM};         }
+  upstream posts_svc         { server ${POSTS_UPSTREAM};         }
+  upstream notifications_svc { server ${NOTIFICATIONS_UPSTREAM}; }
+  upstream conversations_svc { server ${CONVERSATIONS_UPSTREAM}; }
+  upstream frontend_svc      { server ${FRONTEND_UPSTREAM};      }
+
+  proxy_http_version 1.1;
+  proxy_set_header Host              $host;
+  proxy_set_header X-Real-IP         $remote_addr;
+  proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+  proxy_set_header X-Forwarded-Proto $scheme;
+
+  proxy_connect_timeout  10s;
+  proxy_send_timeout     30s;
+  proxy_read_timeout     30s;
+
+  server {
+    listen 80;
+    server_name _;
+
+    add_header X-Frame-Options          "SAMEORIGIN"                       always;
+    add_header X-Content-Type-Options   "nosniff"                          always;
+    add_header Referrer-Policy          "strict-origin-when-cross-origin"  always;
+    add_header Permissions-Policy       "camera=(), microphone=(), geolocation=()" always;
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' ws: wss:; media-src 'self' blob:; object-src 'none'; frame-ancestors 'self'; base-uri 'self'; form-action 'self';" always;
+
+    location /api/auth {
+      limit_req zone=auth_limit burst=20 nodelay;
+      proxy_pass http://auth_svc;
+    }
+
+    location /api/users         { limit_req zone=api_limit burst=50 nodelay; proxy_pass http://users_svc;         }
+    location /api/posts         { limit_req zone=api_limit burst=50 nodelay; proxy_pass http://posts_svc;         }
+    location /api/notifications { limit_req zone=api_limit burst=50 nodelay; proxy_pass http://notifications_svc; }
+    location /api/conversations { limit_req zone=api_limit burst=50 nodelay; proxy_pass http://conversations_svc; }
+
+    location /uploads/ {
+      limit_req zone=upload_limit burst=10 nodelay;
+      proxy_pass http://posts_svc;
+    }
+
+    location = /healthz {
+      access_log off;
+      return 200 'gateway-ok\n';
+    }
+
+    location / {
+      proxy_pass http://frontend_svc;
+      proxy_set_header Upgrade    $http_upgrade;
+      proxy_set_header Connection "upgrade";
+    }
+  }
+}

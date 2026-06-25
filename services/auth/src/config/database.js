@@ -12,6 +12,9 @@ export const sequelize = new Sequelize(env.db.name, env.db.user, env.db.password
   dialect: 'postgres',
   logging: false,
   pool: { max: 10, min: 0, idle: 10000, acquire: 30000 },
+  // SSL activé pour les bases managées (POSTGRES_SSL=true). rejectUnauthorized=false
+  // accepte le certificat managé Azure sans avoir à fournir la chaîne de CA.
+  dialectOptions: env.db.ssl ? { ssl: { require: true, rejectUnauthorized: false } } : {},
 });
 
 /**

@@ -4,7 +4,7 @@
  */
 import { Router } from 'express';
 import * as ctrl from '../controllers/users.controller.js';
-import { authenticate, optionalAuth, requireRole, requireInternal, validate, ah } from '../middleware/common.js';
+import { authenticate, optionalAuth, requireRole, requireInternal, validate, ah, writeLimiter } from '../middleware/common.js';
 import { updateProfileSchema, moderateStatusSchema, updateLanguageSchema, updateThemeSchema } from '../validators/users.schema.js';
 
 const router = Router();
@@ -26,8 +26,8 @@ router.get('/internal/batch', requireInternal, ah(ctrl.internalBatchUsers));
 router.get('/internal/batch-by-usernames', requireInternal, ah(ctrl.batchByUsernames));
 
 // Graphe social
-router.post('/:id/follow', authenticate, ah(ctrl.follow));
-router.delete('/:id/follow', authenticate, ah(ctrl.unfollow));
+router.post('/:id/follow', authenticate, writeLimiter, ah(ctrl.follow));
+router.delete('/:id/follow', authenticate, writeLimiter, ah(ctrl.unfollow));
 router.get('/:id/followers', ah(ctrl.listFollowers));
 router.get('/:id/following', ah(ctrl.listFollowing));
 

@@ -43,6 +43,13 @@ export const Follow = sequelize.define(
   }
 );
 
+// Associations explicites (§7.5) : un utilisateur a plusieurs liens de suivi.
+// « following » = liens où il est le suiveur ; « followers » = liens où il est suivi.
+User.hasMany(Follow, { as: 'following', foreignKey: 'followerId' });
+User.hasMany(Follow, { as: 'followers', foreignKey: 'followedId' });
+Follow.belongsTo(User, { as: 'follower', foreignKey: 'followerId' });
+Follow.belongsTo(User, { as: 'followed', foreignKey: 'followedId' });
+
 /**
  * @brief Projette un utilisateur en vue publique, avec champs additionnels optionnels.
  * @param u Instance utilisateur.

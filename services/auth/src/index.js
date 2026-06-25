@@ -3,11 +3,33 @@
  * @brief Point d'entrée du service Auth : connexion DB, synchronisation, seed admin, écoute.
  */
 import { createApp } from './app.js';
+import { Op } from 'sequelize';
 import { sequelize, connectWithRetry } from './config/database.js';
 import { env } from './config/env.js';
-import './models/user.model.js';
-import './models/refreshToken.model.js';
+import { User } from './models/user.model.js';
+import { RefreshToken } from './models/refreshToken.model.js';
 import { seedAdmin } from './seed.js';
+
+// Associations explicites (§7.5) : un utilisateur possède plusieurs refresh tokens.
+User.hasMany(RefreshToken, { foreignKey: 'userId' });
+RefreshToken.belongsTo(User, { foreignKey: 'userId' });
+
+/**
+ * @brief Purge périodique des refresh tokens expirés (limite la croissance de table).
+ * Les tokens révoqués mais non encore expirés sont conservés pour la détection de rejeu.
+ */
+function startTokenPurge() {
+  const purge = async () => {
+    try {
+      const n = await RefreshToken.destroy({ where: { expiresAt: { [Op.lt]: new Date() } } });
+      if (n) console.log(`[auth] Purge de ${n} refresh token(s) expiré(s)`);
+    } catch (e) {
+      console.error('[auth] Échec de la purge des tokens :', e.message);
+    }
+  };
+  purge();
+  setInterval(purge, 60 * 60 * 1000).unref(); // toutes les heures
+}
 
 /**
  * @brief Applique les migrations de colonnes manquantes de façon idempotente.
@@ -24,6 +46,7 @@ async function bootstrap() {
   await migrate();
   await sequelize.sync(); // crée les tables manquantes ; migrate() gère les colonnes ajoutées
   await seedAdmin();
+  startTokenPurge();
 
   const app = createApp();
   app.listen(env.port, () => {

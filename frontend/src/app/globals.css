@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* === Design system Breezy — palette "dad." (corail + papier + encre) === */
+/* === Design system Twittrr — palette corail + papier + encre === */
 :root {
   /* Fonds */
   --c-bg:  #FBFAF6;
@@ -36,12 +36,12 @@
   --c-tag: rgba(17,17,16,0.07);
   --c-gl:  rgba(251,250,246,0.90);
 
-  /* Palette avatar (5 couleurs déterministes) */
-  --av1: #FF5C45;
-  --av2: #3E7C5A;
-  --av3: #7C3AED;
-  --av4: #B45309;
-  --av5: #0F766E;
+  /* Palette avatar (5 teintes déterministes, accordées à la charte corail + terre) */
+  --av1: #FF5C45; /* corail (marque) */
+  --av2: #3E7C5A; /* mousse        */
+  --av3: #2E7D78; /* sapin / teal  */
+  --av4: #C7892F; /* ocre          */
+  --av5: #4E6E92; /* bleu ardoise  */
 }
 
 [data-theme='dark'] {
@@ -70,11 +70,11 @@
   --c-tag: rgba(240,237,230,0.09);
   --c-gl:  rgba(26,23,20,0.90);
 
-  --av1: #FF7A66;
-  --av2: #4ADE80;
-  --av3: #A78BFA;
-  --av4: #FCD34D;
-  --av5: #2DD4BF;
+  --av1: #FF7A66; /* corail clair  */
+  --av2: #5DBE8A; /* mousse claire */
+  --av3: #54B5AD; /* teal clair    */
+  --av4: #E0B25E; /* ocre clair    */
+  --av5: #7E9DC4; /* ardoise clair */
 }
 
 /* ---- Base ---- */

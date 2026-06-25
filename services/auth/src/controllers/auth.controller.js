@@ -4,6 +4,7 @@
  */
 import bcrypt from 'bcryptjs';
 import { Op } from 'sequelize';
+import { OAuth2Client } from 'google-auth-library';
 import { User, publicUser } from '../models/user.model.js';
 import { RefreshToken } from '../models/refreshToken.model.js';
 import { signAccessToken, signRefreshToken, verifyRefresh } from '../utils/jwt.js';
@@ -12,6 +13,9 @@ import { env } from '../config/env.js';
 
 const BCRYPT_ROUNDS = 12;
 const REFRESH_COOKIE = 'breezy_refresh';
+
+// Client OAuth Google, instancié une seule fois (réutilise le cache de clés publiques).
+const googleClient = env.google.clientId ? new OAuth2Client(env.google.clientId) : null;
 
 function setRefreshCookie(res, token) {
   res.cookie(REFRESH_COOKIE, token, {
@@ -47,9 +51,103 @@ export async function login(req, res) {
     where: { [Op.or]: [{ username: identifier }, { email: identifier }] },
   });
 
-  if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
+  // Compte fédéré (Google) sans mot de passe : la connexion par mot de passe n'est pas possible.
+  if (!user || !user.passwordHash || !(await bcrypt.compare(password, user.passwordHash))) {
     throw new AppError(401, 'INVALID_CREDENTIALS', 'Identifiant ou mot de passe incorrect.');
   }
+  if (user.status === 'banned') {
+    throw new AppError(403, 'ACCOUNT_BANNED', 'Ce compte a été banni.');
+  }
+  if (user.status === 'suspended') {
+    throw new AppError(403, 'ACCOUNT_SUSPENDED', 'Ce compte est temporairement suspendu.');
+  }
+
+  const accessToken = signAccessToken(user);
+  const { token: refreshToken, jti, expiresAt } = signRefreshToken(user);
+  await RefreshToken.create({ jti, userId: user.id, expiresAt });
+  setRefreshCookie(res, refreshToken);
+  return ok(res, { user: publicUser(user), accessToken });
+}
+
+/**
+ * @brief Génère un nom d'utilisateur unique et valide (^\w{3,30}$) à partir d'une base libre.
+ * @param base Chaîne source (pseudo Google ou partie locale de l'e-mail).
+ * @returns Un username disponible respectant les contraintes du modèle.
+ */
+async function uniqueUsername(base) {
+  let root = String(base || 'user').toLowerCase().replace(/[^a-z0-9_]/g, '');
+  if (root.length < 3) root = `user${root}`;
+  root = root.slice(0, 24); // marge pour un éventuel suffixe numérique
+  let candidate = root;
+  let i = 0;
+  // eslint-disable-next-line no-await-in-loop
+  while (await User.findOne({ where: { username: candidate } })) {
+    i += 1;
+    candidate = `${root}${i}`.slice(0, 30);
+  }
+  return candidate;
+}
+
+/**
+ * @brief Connexion / inscription via Google (OpenID Connect, sans mot de passe).
+ *
+ * Vérifie le jeton d'identité Google côté serveur (audience = GOOGLE_CLIENT_ID), puis :
+ *  1. retrouve le compte déjà lié (googleId) ;
+ *  2. sinon, rattache un compte existant au même e-mail (vérifié par Google) ;
+ *  3. sinon, crée un compte fédéré en réutilisant le pseudo Google.
+ * Émet ensuite les jetons de session habituels (access + refresh), comme la connexion classique.
+ */
+export async function googleAuth(req, res) {
+  if (!googleClient) {
+    throw new AppError(503, 'GOOGLE_DISABLED', "La connexion Google n'est pas configurée sur ce serveur.");
+  }
+
+  const { credential } = req.body;
+  let payload;
+  try {
+    const ticket = await googleClient.verifyIdToken({ idToken: credential, audience: env.google.clientId });
+    payload = ticket.getPayload();
+  } catch {
+    throw new AppError(401, 'GOOGLE_INVALID', 'Jeton Google invalide ou expiré.');
+  }
+
+  if (!payload?.email || payload.email_verified === false) {
+    throw new AppError(401, 'GOOGLE_EMAIL_UNVERIFIED', 'Adresse Google absente ou non vérifiée.');
+  }
+
+  const googleId = payload.sub;
+  const email = payload.email.toLowerCase();
+  const displayName = payload.name || payload.given_name || email.split('@')[0];
+  const picture = payload.picture || null;
+
+  // 1) Compte Google déjà lié.
+  let user = await User.findOne({ where: { googleId } });
+
+  // 2) Rattachement à un compte e-mail existant (Google a déjà vérifié l'adresse).
+  if (!user) {
+    user = await User.findOne({ where: { email } });
+    if (user) {
+      user.googleId = googleId;
+      if (!user.avatarUrl && picture) user.avatarUrl = picture;
+      await user.save();
+    }
+  }
+
+  // 3) Création d'un nouveau compte fédéré (sans mot de passe).
+  if (!user) {
+    const username = await uniqueUsername(displayName || email.split('@')[0]);
+    user = await User.create({
+      username,
+      email,
+      passwordHash: null,
+      provider: 'google',
+      googleId,
+      displayName,
+      avatarUrl: picture,
+      role: 'user',
+    });
+  }
+
   if (user.status === 'banned') {
     throw new AppError(403, 'ACCOUNT_BANNED', 'Ce compte a été banni.');
   }

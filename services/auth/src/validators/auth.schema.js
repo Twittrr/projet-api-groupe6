@@ -28,6 +28,11 @@ export const loginSchema = z.object({
   password: z.string().min(1, 'Mot de passe requis.'),
 });
 
+// Connexion via Google : jeton d'identité (ID token JWT) renvoyé par Google Identity Services.
+export const googleSchema = z.object({
+  credential: z.string().min(10, 'Jeton Google manquant.'),
+});
+
 // Création de compte par un administrateur (peut fixer le rôle)
 export const adminCreateUserSchema = z.object({
   username,

@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/store/auth';
 import { apiError } from '@/lib/api';
+import { GoogleSignInButton } from '@/components/GoogleSignInButton';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -60,6 +61,10 @@ export default function LoginPage() {
           {loading ? 'Connexion…' : 'Se connecter'}
         </button>
       </form>
+
+      <div className="mt-5">
+        <GoogleSignInButton onError={setError} />
+      </div>
 
       <p className="mt-6 text-center text-sm text-tx2">
         Pas de compte ?{' '}

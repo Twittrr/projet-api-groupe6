@@ -29,7 +29,19 @@ export const User = sequelize.define(
     },
     passwordHash: {
       type: DataTypes.STRING,
+      allowNull: true, // null pour les comptes fédérés (ex. Google), où aucun mot de passe n'existe
+    },
+    // Fournisseur d'identité : 'local' (email + mot de passe) ou 'google' (OAuth/OIDC).
+    provider: {
+      type: DataTypes.ENUM('local', 'google'),
       allowNull: false,
+      defaultValue: 'local',
+    },
+    // Identifiant Google (claim `sub`) — unique, présent uniquement pour les comptes Google.
+    googleId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      unique: true,
     },
     // RBAC : visitor (non stocké), user, moderator, admin
     role: {
@@ -70,6 +82,7 @@ export function publicUser(u) {
     status: u.status,
     bio: u.bio || '',
     avatarUrl: u.avatarUrl || null,
+    provider: u.provider || 'local',
     createdAt: u.createdAt,
   };
 }

@@ -20,6 +20,7 @@ interface AuthState {
   user: User | null;
   ready: boolean; // session restaurée (bootstrap terminé)
   login: (identifier: string, password: string) => Promise<void>;
+  loginWithGoogle: (credential: string) => Promise<void>;
   register: (username: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   bootstrap: () => Promise<void>;
@@ -33,6 +34,14 @@ export const useAuth = create<AuthState>((set) => ({
 
   login: async (identifier, password) => {
     const res = await api.post('/auth/login', { identifier, password });
+    const { accessToken, user } = res.data.data;
+    setAccessToken(accessToken);
+    syncLang(user);
+    set({ user });
+  },
+
+  loginWithGoogle: async (credential) => {
+    const res = await api.post('/auth/google', { credential });
     const { accessToken, user } = res.data.data;
     setAccessToken(accessToken);
     syncLang(user);

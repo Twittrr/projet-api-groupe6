@@ -38,6 +38,11 @@ function startTokenPurge() {
 async function migrate() {
   await sequelize.query(`ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS language VARCHAR(5) NOT NULL DEFAULT 'fr'`);
   await sequelize.query(`ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS theme VARCHAR(10) NOT NULL DEFAULT 'light'`);
+  // Identité fédérée (Google) : fournisseur + identifiant externe ; le mot de passe devient optionnel.
+  await sequelize.query(`ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS provider VARCHAR(10) NOT NULL DEFAULT 'local'`);
+  await sequelize.query(`ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS "googleId" VARCHAR(255)`);
+  await sequelize.query(`ALTER TABLE IF EXISTS users ALTER COLUMN "passwordHash" DROP NOT NULL`);
+  await sequelize.query(`CREATE UNIQUE INDEX IF NOT EXISTS users_google_id_uniq ON users ("googleId") WHERE "googleId" IS NOT NULL`);
 }
 
 /** @brief Démarre le service (connexion PostgreSQL, sync du schéma, compte admin, écoute HTTP). */

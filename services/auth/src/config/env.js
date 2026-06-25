@@ -17,6 +17,11 @@ export const env = {
     refreshTtl: process.env.JWT_REFRESH_TTL || '7d',
   },
 
+  // Connexion fédérée Google (OpenID Connect). Vide => endpoint désactivé (503).
+  google: {
+    clientId: process.env.GOOGLE_CLIENT_ID || '',
+  },
+
   db: {
     host: process.env.POSTGRES_HOST || 'postgres',
     port: Number(process.env.POSTGRES_PORT || 5432),

@@ -8,7 +8,7 @@ import { validate } from '../middleware/validate.js';
 import { authenticate, requireRole } from '../middleware/authenticate.js';
 import { authLimiter } from '../middleware/rateLimiter.js';
 import { ah } from '../utils/response.js';
-import { registerSchema, loginSchema, adminCreateUserSchema } from '../validators/auth.schema.js';
+import { registerSchema, loginSchema, adminCreateUserSchema, googleSchema } from '../validators/auth.schema.js';
 
 const router = Router();
 
@@ -18,6 +18,7 @@ router.get('/health', (_req, res) => res.json({ data: { status: 'ok', service: '
 // Routes publiques (rate-limit strict)
 router.post('/register', authLimiter, validate(registerSchema), ah(ctrl.register));
 router.post('/login', authLimiter, validate(loginSchema), ah(ctrl.login));
+router.post('/google', authLimiter, validate(googleSchema), ah(ctrl.googleAuth));
 router.post('/refresh', authLimiter, ah(ctrl.refresh)); // rate-limit : protège du token stuffing
 router.post('/logout', ah(ctrl.logout));
 

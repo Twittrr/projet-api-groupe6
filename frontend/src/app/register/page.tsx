@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/store/auth';
 import { apiError } from '@/lib/api';
+import { GoogleSignInButton } from '@/components/GoogleSignInButton';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -35,7 +36,7 @@ export default function RegisterPage() {
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-[440px] flex-col justify-center p-8">
       <h1 className="serif text-4xl text-tx">Créer un compte</h1>
-      <p className="mt-2 text-tx2">Rejoignez Breezy en quelques secondes.</p>
+      <p className="mt-2 text-tx2">Rejoignez Twittrr en quelques secondes.</p>
 
       <form onSubmit={onSubmit} className="mt-8 space-y-3">
         <input
@@ -67,6 +68,10 @@ export default function RegisterPage() {
           {loading ? 'Création…' : 'Créer mon compte'}
         </button>
       </form>
+
+      <div className="mt-5">
+        <GoogleSignInButton onError={setError} />
+      </div>
 
       <p className="mt-6 text-center text-sm text-tx2">
         Déjà inscrit ?{' '}

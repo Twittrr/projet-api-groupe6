@@ -1,8 +1,10 @@
 name: Release — build & push images (GHCR) & deploy (Azure)
 
 # - push sur main / feature/** : build + push des images sur GHCR (ghcr.io).
-# - workflow_dispatch : idem, et permet de cocher `deploy` pour enchaîner Azure.
-# Le déploiement Azure ne se fait JAMAIS sur un simple push (inputs.deploy vide → job sauté).
+#   Le déploiement Azure s'enchaîne automatiquement SI les credentials Azure sont
+#   configurés (variable AZURE_RESOURCE_GROUP + secrets AZURE_*). Sinon le job deploy
+#   est simplement sauté (CI verte). Cf. le `if` du job deploy-azure plus bas.
+# - workflow_dispatch : idem (la case `deploy` force aussi le déploiement).
 on:
   push:
     branches: [main, 'feature/**']
@@ -73,15 +75,18 @@ jobs:
           cache-to: type=gha,mode=max
 
   # -----------------------------------------------------------
-  # Déploiement Azure Container Apps (optionnel, gated)
-  # Ne s'exécute que via "Run workflow" avec `deploy` coché (jamais sur un push).
-  # L'environnement `production` doit exiger une approbation manuelle
-  # (Settings > Environments > production > Required reviewers).
+  # Déploiement Azure Container Apps
+  # S'exécute automatiquement après build-push, MAIS uniquement si l'auth Azure
+  # est configurée (variable AZURE_RESOURCE_GROUP présente). Tant qu'elle est vide,
+  # le job est sauté (pas d'échec). Prérequis : un admin du tenant fournit un
+  # service principal OIDC, puis on ajoute les secrets AZURE_CLIENT_ID /
+  # AZURE_TENANT_ID / AZURE_SUBSCRIPTION_ID + la variable AZURE_RESOURCE_GROUP.
+  # Approbation manuelle possible via Settings > Environments > production.
   # -----------------------------------------------------------
   deploy-azure:
     name: Deploy → Azure Container Apps
     needs: build-push
-    if: ${{ inputs.deploy }}
+    if: ${{ (github.event_name == 'push' || inputs.deploy) && vars.AZURE_RESOURCE_GROUP != '' }}
     runs-on: ubuntu-latest
     environment: production
     permissions:
@@ -104,7 +109,9 @@ jobs:
             RG="${{ vars.AZURE_RESOURCE_GROUP }}"
             OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
             TAG="sha-${{ github.sha }}"
-            for svc in auth users posts notifications conversations frontend gateway; do
+
+            # Backend + frontend : simple mise à jour d'image.
+            for svc in auth users posts notifications conversations frontend; do
               echo "::group::Déploiement breezy-$svc"
               az containerapp update \
                 --name "breezy-$svc" \
@@ -112,3 +119,22 @@ jobs:
                 --image "ghcr.io/$OWNER/breezy-$svc:$TAG"
               echo "::endgroup::"
             done
+
+            # Gateway : image + upstreams = FQDN interne COMPLET de chaque app cible.
+            # L'ingress interne d'ACA route selon le header Host : un nom court renvoie
+            # « app does not exist » → 404. On lit donc le FQDN réel de chaque app.
+            echo "::group::Déploiement breezy-gateway"
+            fqdn() { az containerapp show -n "breezy-$1" -g "$RG" \
+                       --query properties.configuration.ingress.fqdn -o tsv; }
+            az containerapp update \
+              --name breezy-gateway \
+              --resource-group "$RG" \
+              --image "ghcr.io/$OWNER/breezy-gateway:$TAG" \
+              --set-env-vars \
+                "AUTH_UPSTREAM=$(fqdn auth)" \
+                "USERS_UPSTREAM=$(fqdn users)" \
+                "POSTS_UPSTREAM=$(fqdn posts)" \
+                "NOTIFICATIONS_UPSTREAM=$(fqdn notifications)" \
+                "CONVERSATIONS_UPSTREAM=$(fqdn conversations)" \
+                "FRONTEND_UPSTREAM=$(fqdn frontend)"
+            echo "::endgroup::"

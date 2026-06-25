@@ -41,7 +41,7 @@ export default function RightSidebar() {
       <div className="sticky top-5 space-y-4">
         {/* Recherche (renvoie vers l'écran Explorer) */}
         <button onClick={() => router.push('/explore')} className="flex w-full items-center gap-2 rounded-2xl bg-sf px-4 py-2.5 text-left text-sm text-tx3">
-          <Search size={16} /> Rechercher sur Breezy
+          <Search size={16} /> Rechercher sur Twittrr
         </button>
 
         {/* Suggestions « à suivre » */}
@@ -84,7 +84,7 @@ export default function RightSidebar() {
           </section>
         )}
 
-        <p className="px-2 text-[11px] leading-relaxed text-tx4">Breezy v0.2 — un journal social, plus lent, plus soigné.</p>
+        <p className="px-2 text-[11px] leading-relaxed text-tx4">Twittrr v0.2 — un journal social, plus lent, plus soigné.</p>
       </div>
     </aside>
   );

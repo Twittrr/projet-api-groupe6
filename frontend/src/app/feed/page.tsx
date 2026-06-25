@@ -12,6 +12,7 @@ import { useT } from '@/lib/useT';
 import AppShell from '@/components/AppShell';
 import StoryRail from '@/components/StoryRail';
 import PostCard from '@/components/PostCard';
+import { Logo } from '@/components/Logo';
 import type { Post } from '@/lib/types';
 
 type Tab = 'foryou' | 'following';
@@ -61,10 +62,7 @@ export default function FeedPage() {
   return (
     <AppShell>
       <header className="flex items-center justify-between bg-bg px-5 py-3 lg:hidden">
-        <div className="flex items-center gap-2">
-          <span className="serif flex h-8 w-8 items-center justify-center rounded-lg bg-tx text-base text-bg">d</span>
-          <span className="serif text-2xl text-tx">dad.</span>
-        </div>
+        <Logo size={32} withWord />
         <div className="flex items-center gap-2">
           <button onClick={() => router.push('/explore')} aria-label={t('nav.explore')} className="flex h-9 w-9 items-center justify-center rounded-full bg-sf text-tx2">
             <Search size={16} />

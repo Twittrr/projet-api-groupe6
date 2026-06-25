@@ -1,9 +1,11 @@
-name: Release — build, push (Docker Hub) & deploy (Azure)
+name: Release — build & push images (GHCR) & deploy (Azure)
 
-# Déclenchement MANUEL uniquement (aucun push/déploiement automatique).
-#   - "Run workflow" depuis l'onglet Actions de GitHub.
-#   - Cocher `deploy` pour enchaîner le déploiement Azure après le push des images.
+# - push sur main / feature/** : build + push des images sur GHCR (ghcr.io).
+# - workflow_dispatch : idem, et permet de cocher `deploy` pour enchaîner Azure.
+# Le déploiement Azure ne se fait JAMAIS sur un simple push (inputs.deploy vide → job sauté).
 on:
+  push:
+    branches: [main, 'feature/**']
   workflow_dispatch:
     inputs:
       deploy:
@@ -13,11 +15,13 @@ on:
 
 permissions:
   contents: read
+  packages: write   # publier sur GHCR avec le GITHUB_TOKEN intégré
 
 jobs:
   # -----------------------------------------------------------
-  # Build + push des images sur Docker Hub (matrice)
+  # Build + push des images sur GHCR (matrice)
   # Tags : :latest  et  :sha-<commit>  (immuable, utilisé par le deploy)
+  # Images : ghcr.io/<owner>/breezy-<service>
   # -----------------------------------------------------------
   build-push:
     name: Build & push — ${{ matrix.service }}
@@ -38,17 +42,19 @@ jobs:
 
       - uses: docker/setup-buildx-action@v3
 
-      - name: Login Docker Hub
+      - name: Login GHCR
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Métadonnées (tags + labels)
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ secrets.DOCKERHUB_NAMESPACE }}/breezy-${{ matrix.service }}
+          # metadata-action met automatiquement le nom d'image en minuscules.
+          images: ghcr.io/${{ github.repository_owner }}/breezy-${{ matrix.service }}
           tags: |
             type=raw,value=latest
             type=sha,prefix=sha-,format=long
@@ -68,7 +74,7 @@ jobs:
 
   # -----------------------------------------------------------
   # Déploiement Azure Container Apps (optionnel, gated)
-  # Ne s'exécute que si l'input `deploy` est coché ET après build-push.
+  # Ne s'exécute que via "Run workflow" avec `deploy` coché (jamais sur un push).
   # L'environnement `production` doit exiger une approbation manuelle
   # (Settings > Environments > production > Required reviewers).
   # -----------------------------------------------------------
@@ -96,13 +102,13 @@ jobs:
           inlineScript: |
             set -euo pipefail
             RG="${{ vars.AZURE_RESOURCE_GROUP }}"
-            NS="${{ secrets.DOCKERHUB_NAMESPACE }}"
+            OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
             TAG="sha-${{ github.sha }}"
             for svc in auth users posts notifications conversations frontend gateway; do
               echo "::group::Déploiement breezy-$svc"
               az containerapp update \
                 --name "breezy-$svc" \
                 --resource-group "$RG" \
-                --image "docker.io/$NS/breezy-$svc:$TAG"
+                --image "ghcr.io/$OWNER/breezy-$svc:$TAG"
               echo "::endgroup::"
             done

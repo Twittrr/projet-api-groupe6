@@ -1,8 +1,11 @@
 # =============================================================
 # Breezy — Gateway Nginx (TEMPLATE pour déploiement cloud)
 # Les ${*_UPSTREAM} sont substitués au démarrage par l'entrypoint nginx (envsubst).
-# Voir gateway/Dockerfile. La version LOCALE (avec load balancing des répliques
-# docker-compose) est gateway/nginx.conf, montée en volume par docker-compose.
+# La version LOCALE (load balancing des répliques docker-compose) est gateway/nginx.conf.
+#
+# IMPORTANT (Azure Container Apps) : l'ingress interne route selon le Host. On force donc
+# Host = FQDN interne de l'app cible (${*_UPSTREAM}), sinon ACA renvoie "app does not exist".
+# Sur ACA, *_UPSTREAM = <app>.internal.<defaultDomain>  (ex. breezy-auth.internal.xxx...).
 # =============================================================
 worker_processes auto;
 
@@ -30,25 +33,12 @@ http {
              application/xml image/svg+xml;
   gzip_min_length 512;
 
-  # Rate limiting par IP (cf. nginx.conf local pour le détail des zones)
   limit_req_zone $binary_remote_addr zone=auth_limit:10m   rate=5r/s;
   limit_req_zone $binary_remote_addr zone=api_limit:10m    rate=20r/s;
   limit_req_zone $binary_remote_addr zone=upload_limit:10m rate=2r/s;
   limit_req_status 429;
 
-  # -----------------------------------------------------------
-  # Upstreams — paramétrés par variables d'environnement.
-  # ACA : AUTH_UPSTREAM=breezy-auth (résolution par nom d'app, LB géré par ACA).
-  # -----------------------------------------------------------
-  upstream auth_svc          { server ${AUTH_UPSTREAM};          }
-  upstream users_svc         { server ${USERS_UPSTREAM};         }
-  upstream posts_svc         { server ${POSTS_UPSTREAM};         }
-  upstream notifications_svc { server ${NOTIFICATIONS_UPSTREAM}; }
-  upstream conversations_svc { server ${CONVERSATIONS_UPSTREAM}; }
-  upstream frontend_svc      { server ${FRONTEND_UPSTREAM};      }
-
   proxy_http_version 1.1;
-  proxy_set_header Host              $host;
   proxy_set_header X-Real-IP         $remote_addr;
   proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
   proxy_set_header X-Forwarded-Proto $scheme;
@@ -69,17 +59,35 @@ http {
 
     location /api/auth {
       limit_req zone=auth_limit burst=20 nodelay;
-      proxy_pass http://auth_svc;
+      proxy_set_header Host ${AUTH_UPSTREAM};
+      proxy_pass http://${AUTH_UPSTREAM};
     }
 
-    location /api/users         { limit_req zone=api_limit burst=50 nodelay; proxy_pass http://users_svc;         }
-    location /api/posts         { limit_req zone=api_limit burst=50 nodelay; proxy_pass http://posts_svc;         }
-    location /api/notifications { limit_req zone=api_limit burst=50 nodelay; proxy_pass http://notifications_svc; }
-    location /api/conversations { limit_req zone=api_limit burst=50 nodelay; proxy_pass http://conversations_svc; }
+    location /api/users {
+      limit_req zone=api_limit burst=50 nodelay;
+      proxy_set_header Host ${USERS_UPSTREAM};
+      proxy_pass http://${USERS_UPSTREAM};
+    }
+    location /api/posts {
+      limit_req zone=api_limit burst=50 nodelay;
+      proxy_set_header Host ${POSTS_UPSTREAM};
+      proxy_pass http://${POSTS_UPSTREAM};
+    }
+    location /api/notifications {
+      limit_req zone=api_limit burst=50 nodelay;
+      proxy_set_header Host ${NOTIFICATIONS_UPSTREAM};
+      proxy_pass http://${NOTIFICATIONS_UPSTREAM};
+    }
+    location /api/conversations {
+      limit_req zone=api_limit burst=50 nodelay;
+      proxy_set_header Host ${CONVERSATIONS_UPSTREAM};
+      proxy_pass http://${CONVERSATIONS_UPSTREAM};
+    }
 
     location /uploads/ {
       limit_req zone=upload_limit burst=10 nodelay;
-      proxy_pass http://posts_svc;
+      proxy_set_header Host ${POSTS_UPSTREAM};
+      proxy_pass http://${POSTS_UPSTREAM};
     }
 
     location = /healthz {
@@ -88,7 +96,8 @@ http {
     }
 
     location / {
-      proxy_pass http://frontend_svc;
+      proxy_set_header Host ${FRONTEND_UPSTREAM};
+      proxy_pass http://${FRONTEND_UPSTREAM};
       proxy_set_header Upgrade    $http_upgrade;
       proxy_set_header Connection "upgrade";
     }

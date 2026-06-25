@@ -70,7 +70,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           # NEXT_PUBLIC_API_URL n'est consommé que par le frontend (ignoré ailleurs).
           build-args: |
-            NEXT_PUBLIC_API_URL=/api
+            NEXT_PUBLIC_API_URL=/api/v1
           cache-from: type=gha
           cache-to: type=gha,mode=max
 

@@ -112,7 +112,7 @@ export const BIOS = [
   'Lectrice compulsive et grande buveuse de thé.',
   'Musicien amateur, amateur de silence.',
   'Graphiste indépendant basé à Lyon.',
-  'Court le matin, code l'après-midi.',
+  "Court le matin, code l'après-midi.",
   'Jardine les week-ends, déploie en prod la semaine.',
   'Fan de jazz et d\'architecture brutaliste.',
   'Journaliste pigiste, toujours en quête du bon angle.',

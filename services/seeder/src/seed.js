@@ -71,7 +71,7 @@ function buildUsers(passwordHash) {
   const usernames = new Set();
 
   const makeUsername = (base) => {
-    let u = base.toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 24) || 'user';
+    const u = base.toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 24) || 'user';
     let candidate = u;
     let n = 1;
     while (usernames.has(candidate) || candidate === 'admin') candidate = `${u}${n++}`;

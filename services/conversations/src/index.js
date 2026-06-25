@@ -23,11 +23,12 @@ export function createApp() {
   app.use(express.json({ limit: '64kb' }));
   app.use(rateLimit({ windowMs: 60 * 1000, max: 200, standardHeaders: true, legacyHeaders: false }));
 
-  app.get('/api/conversations/health', (_req, res) =>
+  app.get(['/api/conversations/health', '/api/v1/conversations/health'], (_req, res) =>
     res.json({ data: { status: 'ok', service: 'conversations' }, error: null })
   );
 
-  app.use('/api/conversations', conversationsRouter);
+  // Routes versionnées (/api/v1) + alias non versionné conservé pour rétro-compatibilité.
+  app.use(['/api/conversations', '/api/v1/conversations'], conversationsRouter);
 
   app.use((req, res) => fail(res, 404, 'NOT_FOUND', `Route introuvable : ${req.method} ${req.originalUrl}`));
 

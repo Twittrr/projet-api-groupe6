@@ -13,7 +13,7 @@ import axios, { AxiosError, AxiosRequestConfig } from 'axios';
 // (ex. NEXT_PUBLIC_API_URL=http://localhost/api) mais que la page est servie sur
 // un port différent (ex. :8080), les requêtes violerait le CSP. On détecte ce
 // cas au runtime et on repasse en URL relative pour rester same-origin.
-const _baked = process.env.NEXT_PUBLIC_API_URL || '/api';
+const _baked = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
 const API_URL = (() => {
   if (globalThis.window === undefined || !_baked.startsWith('http')) return _baked;
   try {

@@ -41,7 +41,7 @@ export function mediaUrl(url: string): string {
   if (!url) return '';
   if (isGradient(url)) return url;
   if (url.startsWith('/uploads/')) {
-    const base = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/api$/, '');
+    const base = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/api(\/v\d+)?$/, '');
     return `${base}${url}`;
   }
   if (url.startsWith('https://') || url.startsWith('http://')) return url;

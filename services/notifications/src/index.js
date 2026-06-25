@@ -114,7 +114,8 @@ export function createApp() {
     return ok(res, { read: true });
   }));
 
-  app.use('/api/notifications', r);
+  // Routes versionnées (/api/v1) + alias non versionné conservé pour rétro-compatibilité.
+  app.use(['/api/notifications', '/api/v1/notifications'], r);
 
   app.use((req, res) => fail(res, 404, 'NOT_FOUND', `Route introuvable : ${req.method} ${req.originalUrl}`));
   // eslint-disable-next-line no-unused-vars

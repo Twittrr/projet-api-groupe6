@@ -30,7 +30,8 @@ export function createApp() {
   app.use(cookieParser());
   app.use(globalLimiter);
 
-  app.use('/api/auth', authRoutes);
+  // Routes versionnées (/api/v1) + alias non versionné conservé pour rétro-compatibilité.
+  app.use(['/api/auth', '/api/v1/auth'], authRoutes);
 
   app.use(notFound);
   app.use(errorHandler);

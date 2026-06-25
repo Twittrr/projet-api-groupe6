@@ -84,6 +84,33 @@ http {
       proxy_pass http://${CONVERSATIONS_UPSTREAM};
     }
 
+    # ----- API versionnée (/api/v1) — routage identique vers les mêmes services -----
+    location /api/v1/auth {
+      limit_req zone=auth_limit burst=20 nodelay;
+      proxy_set_header Host ${AUTH_UPSTREAM};
+      proxy_pass http://${AUTH_UPSTREAM};
+    }
+    location /api/v1/users {
+      limit_req zone=api_limit burst=50 nodelay;
+      proxy_set_header Host ${USERS_UPSTREAM};
+      proxy_pass http://${USERS_UPSTREAM};
+    }
+    location /api/v1/posts {
+      limit_req zone=api_limit burst=50 nodelay;
+      proxy_set_header Host ${POSTS_UPSTREAM};
+      proxy_pass http://${POSTS_UPSTREAM};
+    }
+    location /api/v1/notifications {
+      limit_req zone=api_limit burst=50 nodelay;
+      proxy_set_header Host ${NOTIFICATIONS_UPSTREAM};
+      proxy_pass http://${NOTIFICATIONS_UPSTREAM};
+    }
+    location /api/v1/conversations {
+      limit_req zone=api_limit burst=50 nodelay;
+      proxy_set_header Host ${CONVERSATIONS_UPSTREAM};
+      proxy_pass http://${CONVERSATIONS_UPSTREAM};
+    }
+
     location /uploads/ {
       limit_req zone=upload_limit burst=10 nodelay;
       proxy_set_header Host ${POSTS_UPSTREAM};

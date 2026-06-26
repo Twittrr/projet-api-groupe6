@@ -5,7 +5,7 @@
  */
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Heart, MessageCircle, UserPlus, AtSign, MessageSquare } from 'lucide-react';
+import { Heart, MessageCircle, UserPlus, AtSign, MessageSquare, Repeat2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useRequireAuth } from '@/lib/useRequireAuth';
 import { useLang } from '@/store/lang';
@@ -15,7 +15,7 @@ import AppShell from '@/components/AppShell';
 import { timeAgo } from '@/lib/helpers';
 import type { Notification } from '@/lib/types';
 
-const ICON = { like: Heart, comment: MessageCircle, follow: UserPlus, mention: AtSign, message: MessageSquare };
+const ICON = { like: Heart, comment: MessageCircle, follow: UserPlus, mention: AtSign, message: MessageSquare, repost: Repeat2 };
 
 export default function NotificationsPage() {
   const router = useRouter();
@@ -30,6 +30,7 @@ export default function NotificationsPage() {
     follow:  t('notif.follow'),
     mention: t('notif.mention'),
     message: t('notif.message'),
+    repost:  t('notif.repost'),
   };
 
   useEffect(() => {

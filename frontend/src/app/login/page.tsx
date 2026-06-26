@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/store/auth';
 import { apiError } from '@/lib/api';
 import { GoogleSignInButton } from '@/components/GoogleSignInButton';
+import PasswordInput from '@/components/PasswordInput';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -44,14 +45,21 @@ export default function LoginPage() {
           onChange={(e) => setIdentifier(e.target.value)}
           autoComplete="username"
         />
-        <input
-          type="password"
-          className="h-13 w-full rounded-xl2 border border-bd2 bg-sf px-4 py-3 text-tx outline-none focus:border-ac"
+        <PasswordInput
           placeholder="Mot de passe"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={setPassword}
           autoComplete="current-password"
         />
+        <div className="text-right">
+          <button
+            type="button"
+            onClick={() => router.push('/forgot')}
+            className="text-sm text-tx2 hover:text-tx"
+          >
+            Mot de passe oublié ?
+          </button>
+        </div>
         {error && <p className="text-sm text-err">{error}</p>}
         <button
           type="submit"

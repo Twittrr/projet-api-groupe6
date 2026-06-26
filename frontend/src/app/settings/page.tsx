@@ -5,7 +5,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Moon, Sun, Shield, LogOut, Globe, Camera, Bell } from 'lucide-react';
+import { Moon, Sun, Shield, LogOut, Globe, Camera, Bell, Lock } from 'lucide-react';
 import { api, apiError } from '@/lib/api';
 import { useRequireAuth } from '@/lib/useRequireAuth';
 import { useAuth } from '@/store/auth';
@@ -15,13 +15,14 @@ import { useT } from '@/lib/useT';
 import type { Lang, TKey } from '@/lib/i18n';
 import AppHeader from '@/components/AppHeader';
 import Avatar from '@/components/Avatar';
+import PasswordInput from '@/components/PasswordInput';
 
 const LANGS: { value: Lang; flag: string }[] = [
   { value: 'fr', flag: '🇫🇷' },
   { value: 'en', flag: '🇬🇧' },
 ];
 
-const NOTIF_TYPES = ['like', 'comment', 'follow', 'mention', 'message'] as const;
+const NOTIF_TYPES = ['like', 'comment', 'follow', 'mention', 'message', 'repost'] as const;
 type NotifPrefs = Record<(typeof NOTIF_TYPES)[number], boolean>;
 
 export default function SettingsPage() {
@@ -38,6 +39,12 @@ export default function SettingsPage() {
   const [uploading, setUploading] = useState(false);
   const [notifPrefs, setNotifPrefs] = useState<NotifPrefs | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  // Changement de mot de passe
+  const [curPwd, setCurPwd] = useState('');
+  const [newPwd, setNewPwd] = useState('');
+  const [pwdMsg, setPwdMsg] = useState('');
+  const [pwdErr, setPwdErr] = useState('');
+  const [pwdLoading, setPwdLoading] = useState(false);
 
   useEffect(() => {
     if (user) { setDisplayName(user.displayName || ''); setBio(user.bio || ''); }
@@ -98,6 +105,22 @@ export default function SettingsPage() {
   async function changeLanguage(l: Lang) {
     setLang(l);
     try { await api.patch('/users/me/language', { language: l }); } catch {}
+  }
+
+  async function changePassword() {
+    setPwdMsg('');
+    setPwdErr('');
+    setPwdLoading(true);
+    try {
+      await api.post('/auth/change-password', { currentPassword: curPwd, newPassword: newPwd });
+      setCurPwd('');
+      setNewPwd('');
+      setPwdMsg('Mot de passe mis à jour ✓');
+    } catch (err) {
+      setPwdErr(apiError(err));
+    } finally {
+      setPwdLoading(false);
+    }
   }
 
   async function onLogout() {
@@ -211,6 +234,41 @@ export default function SettingsPage() {
           <button onClick={save} className="mt-3 w-full rounded-xl2 bg-ac py-2.5 font-semibold text-white">{t('settings.save')}</button>
           {msg && <p className="mt-2 text-sm text-ok">{msg}</p>}
         </section>
+
+        {/* Sécurité — changement de mot de passe (comptes locaux uniquement) */}
+        {user.provider !== 'google' && (
+          <section className="rounded-xl3 border border-bd bg-sf p-4">
+            <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-tx3">
+              <span className="flex items-center gap-1.5"><Lock size={13} />Mot de passe</span>
+            </h2>
+            <div className="space-y-3">
+              <PasswordInput
+                placeholder="Mot de passe actuel"
+                value={curPwd}
+                onChange={setCurPwd}
+                autoComplete="current-password"
+                className="h-11 w-full rounded-xl2 border border-bd2 bg-bg px-3 py-2 pr-12 text-tx outline-none focus:border-ac"
+              />
+              <PasswordInput
+                placeholder="Nouveau mot de passe (8+, maj, min, chiffre)"
+                value={newPwd}
+                onChange={setNewPwd}
+                autoComplete="new-password"
+                showStrength
+                className="h-11 w-full rounded-xl2 border border-bd2 bg-bg px-3 py-2 pr-12 text-tx outline-none focus:border-ac"
+              />
+              <button
+                onClick={changePassword}
+                disabled={pwdLoading || !curPwd || !newPwd}
+                className="w-full rounded-xl2 bg-ac py-2.5 font-semibold text-white disabled:opacity-60"
+              >
+                {pwdLoading ? 'Mise à jour…' : 'Changer le mot de passe'}
+              </button>
+              {pwdMsg && <p className="text-sm text-ok">{pwdMsg}</p>}
+              {pwdErr && <p className="text-sm text-err">{pwdErr}</p>}
+            </div>
+          </section>
+        )}
 
         {/* Administration — Fx21 (RBAC frontend) */}
         {(user.role === 'admin' || user.role === 'moderator') && (

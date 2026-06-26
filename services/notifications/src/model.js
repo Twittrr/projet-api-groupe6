@@ -26,7 +26,7 @@ NotificationSchema.index({ createdAt: 1 }, { expireAfterSeconds: 90 * 24 * 3600 
 export const Notification = mongoose.model('Notification', NotificationSchema);
 
 /** Types de notification activables/désactivables par l'utilisateur. */
-export const NOTIF_TYPES = ['like', 'comment', 'follow', 'mention', 'message'];
+export const NOTIF_TYPES = ['like', 'comment', 'follow', 'mention', 'message', 'repost'];
 
 // Préférences par utilisateur : un booléen par type, activé par défaut.
 const PreferenceSchema = new mongoose.Schema(
@@ -37,6 +37,7 @@ const PreferenceSchema = new mongoose.Schema(
     follow:  { type: Boolean, default: true },
     mention: { type: Boolean, default: true },
     message: { type: Boolean, default: true },
+    repost:  { type: Boolean, default: true },
   },
   { timestamps: true }
 );

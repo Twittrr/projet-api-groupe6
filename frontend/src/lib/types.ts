@@ -15,6 +15,7 @@ export interface User {
   avatarUrl: string | null;
   language: string;
   theme: string;
+  provider?: 'local' | 'google'; // fournisseur d'identité (renvoyé par publicUser côté auth)
   createdAt: string;
   followers?: number;
   following?: number;

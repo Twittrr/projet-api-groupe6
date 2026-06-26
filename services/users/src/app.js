@@ -21,7 +21,8 @@ export function createApp() {
   app.use(express.json({ limit: '64kb' }));
   app.use(globalLimiter);
 
-  app.use('/api/users', usersRoutes);
+  // Routes versionnées (/api/v1) + alias non versionné conservé pour rétro-compatibilité.
+  app.use(['/api/users', '/api/v1/users'], usersRoutes);
 
   app.use(notFound);
   app.use(errorHandler);

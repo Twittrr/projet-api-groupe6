@@ -15,6 +15,7 @@ export interface User {
   avatarUrl: string | null;
   language: string;
   theme: string;
+  provider?: 'local' | 'google'; // fournisseur d'identité (renvoyé par publicUser côté auth)
   createdAt: string;
   followers?: number;
   following?: number;
@@ -37,8 +38,12 @@ export interface Post {
   media: Media[];
   likeCount: number;
   commentCount: number;
-  /** Nombre de repartages (non implémenté backend — toujours absent ou 0). */
+  /** Nombre de repartages. */
   repostCount?: number;
+  /** Si ce post est une republication : id du post original, sinon null/absent. */
+  repostOf?: string | null;
+  /** Nom de l'auteur du post original republié. */
+  repostOfUsername?: string | null;
   liked: boolean;
   /** true si l'utilisateur courant a bookmarké ce post. */
   bookmarked: boolean;
@@ -100,6 +105,7 @@ export interface Message {
   authorUsername: string;
   content: string;
   readBy: string[];
+  deleted?: boolean;
   createdAt: string;
 }
 

@@ -60,6 +60,17 @@ const fr = {
   'notif.follow':  'a commencé à vous suivre',
   'notif.mention': 'vous a mentionné',
   'notif.message': 'vous a envoyé un message',
+  'notif.repost':  'a republié votre message',
+
+  // Préférences de notification (libellés courts pour les réglages)
+  'settings.notifications': 'Notifications',
+  'settings.notifSaved':    'Préférences enregistrées ✓',
+  'notifPref.like':    'J’aime',
+  'notifPref.comment': 'Commentaires',
+  'notifPref.follow':  'Nouveaux abonnés',
+  'notifPref.mention': 'Mentions',
+  'notifPref.message': 'Messages',
+  'notifPref.repost':  'Republications',
 
   // Paramètres
   'settings.title':       'Réglages',
@@ -147,6 +158,17 @@ const en: Record<keyof typeof fr, string> = {
   'notif.follow':  'started following you',
   'notif.mention': 'mentioned you',
   'notif.message': 'sent you a message',
+  'notif.repost':  'reposted your post',
+
+  // Notification preferences (short labels for settings)
+  'settings.notifications': 'Notifications',
+  'settings.notifSaved':    'Preferences saved ✓',
+  'notifPref.like':    'Likes',
+  'notifPref.comment': 'Comments',
+  'notifPref.follow':  'New followers',
+  'notifPref.mention': 'Mentions',
+  'notifPref.message': 'Messages',
+  'notifPref.repost':  'Reposts',
 
   // Settings
   'settings.title':       'Settings',

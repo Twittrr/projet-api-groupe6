@@ -9,7 +9,7 @@ export const env = {
     .split(',').map((o) => o.trim()).filter(Boolean),
   jwt: { accessSecret: process.env.JWT_ACCESS_SECRET || 'dev_access_secret' },
   internalKey: process.env.INTERNAL_API_KEY || 'dev_internal_key',
-  notifUrl: `http://notifications:${process.env.NOTIF_PORT || 4004}`,
+  notifUrl: process.env.NOTIFICATIONS_URL || `http://notifications:${process.env.NOTIF_PORT || 4004}`,
   db: {
     host: process.env.POSTGRES_HOST || 'postgres',
     port: Number(process.env.POSTGRES_PORT || 5432),

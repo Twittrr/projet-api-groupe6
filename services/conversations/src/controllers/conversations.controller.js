@@ -30,6 +30,11 @@ function isParticipant(conv, userId) {
   return conv.participants.some((p) => p.userId === userId);
 }
 
+/** Seul l'auteur d'un message peut le supprimer. */
+export function canDeleteMessage(message, userId) {
+  return Boolean(message) && message.authorId === userId;
+}
+
 /** Extrait les usernames uniques mentionnés (@username) dans un texte. */
 function extractMentions(content) {
   const matches = content.match(/@(\w+)/g) ?? [];
@@ -128,6 +133,35 @@ export async function listConversations(req, res) {
   const conversations = await Conversation.find({
     'participants.userId': req.user.id,
   }).sort({ updatedAt: -1 }).limit(100);
+
+  // Auto-réparation : un participant dont username === userId est un UUID jamais
+  // résolu (service Users indisponible à la création). On re-résout puis on persiste,
+  // afin que les conversations corrompues s'affichent correctement dès ce chargement.
+  const staleIds = [...new Set(
+    conversations
+      .flatMap((c) => c.participants)
+      .filter((p) => p.username === p.userId)
+      .map((p) => p.userId),
+  )];
+  if (staleIds.length) {
+    const map = await resolveUsernames(staleIds);
+    const dirty = [];
+    for (const conv of conversations) {
+      let changed = false;
+      for (const p of conv.participants) {
+        if (p.username === p.userId && map[p.userId]) {
+          p.username = map[p.userId];
+          changed = true;
+        }
+      }
+      if (changed) {
+        conv.markModified('participants');
+        dirty.push(conv.save());
+      }
+    }
+    await Promise.allSettled(dirty);
+  }
+
   return ok(res, { conversations });
 }
 
@@ -276,6 +310,31 @@ export async function markRead(req, res) {
   clearMessageNotifications(req.params.id, req.user.id);
 
   return ok(res, { read: true });
+}
+
+/**
+ * @brief Supprime (soft-delete) un message dont on est l'auteur.
+ * Le message reste dans le fil des deux participants mais son contenu est vidé
+ * et `deleted` passe à true → l'autre voit « message supprimé » au prochain chargement.
+ */
+export async function deleteMessage(req, res) {
+  const conv = await Conversation.findById(req.params.id);
+  if (!conv) return fail(res, 404, 'NOT_FOUND', 'Conversation introuvable.');
+  if (!isParticipant(conv, req.user.id)) return fail(res, 403, 'FORBIDDEN', 'Accès refusé.');
+
+  const message = await Message.findOne({ _id: req.params.messageId, conversationId: req.params.id });
+  if (!message) return fail(res, 404, 'NOT_FOUND', 'Message introuvable.');
+  if (!canDeleteMessage(message, req.user.id)) {
+    return fail(res, 403, 'FORBIDDEN', 'Vous ne pouvez supprimer que vos propres messages.');
+  }
+
+  // Soft-delete : on vide le contenu (validators off sur findByIdAndUpdate).
+  const updated = await Message.findByIdAndUpdate(
+    message._id,
+    { deleted: true, content: '' },
+    { new: true },
+  );
+  return ok(res, { message: updated });
 }
 
 /** @brief Compteur de messages non lus dans toutes les conversations de l'utilisateur. */

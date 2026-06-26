@@ -13,7 +13,9 @@ export const User = sequelize.define(
     id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
     username: { type: DataTypes.STRING(30), allowNull: false, unique: true },
     email: { type: DataTypes.STRING(255), allowNull: false, unique: true },
-    passwordHash: { type: DataTypes.STRING, allowNull: false },
+    passwordHash: { type: DataTypes.STRING, allowNull: true },
+    provider: { type: DataTypes.ENUM('local', 'google'), allowNull: false, defaultValue: 'local' },
+    googleId: { type: DataTypes.STRING, allowNull: true, unique: true },
     role: { type: DataTypes.ENUM('user', 'moderator', 'admin'), allowNull: false, defaultValue: 'user' },
     status: { type: DataTypes.ENUM('active', 'suspended', 'banned'), allowNull: false, defaultValue: 'active' },
     displayName: { type: DataTypes.STRING(60), allowNull: true },
@@ -42,6 +44,13 @@ export const Follow = sequelize.define(
     ],
   }
 );
+
+// Associations explicites (§7.5) : un utilisateur a plusieurs liens de suivi.
+// « following » = liens où il est le suiveur ; « followers » = liens où il est suivi.
+User.hasMany(Follow, { as: 'following', foreignKey: 'followerId' });
+User.hasMany(Follow, { as: 'followers', foreignKey: 'followedId' });
+Follow.belongsTo(User, { as: 'follower', foreignKey: 'followerId' });
+Follow.belongsTo(User, { as: 'followed', foreignKey: 'followedId' });
 
 /**
  * @brief Projette un utilisateur en vue publique, avec champs additionnels optionnels.

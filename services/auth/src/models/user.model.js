@@ -29,7 +29,19 @@ export const User = sequelize.define(
     },
     passwordHash: {
       type: DataTypes.STRING,
+      allowNull: true, // null pour les comptes fédérés (ex. Google), où aucun mot de passe n'existe
+    },
+    // Fournisseur d'identité : 'local' (email + mot de passe) ou 'google' (OAuth/OIDC).
+    provider: {
+      type: DataTypes.ENUM('local', 'google'),
       allowNull: false,
+      defaultValue: 'local',
+    },
+    // Identifiant Google (claim `sub`) — unique, présent uniquement pour les comptes Google.
+    googleId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      unique: true,
     },
     // RBAC : visitor (non stocké), user, moderator, admin
     role: {
@@ -48,6 +60,9 @@ export const User = sequelize.define(
     avatarUrl: { type: DataTypes.STRING, allowNull: true },
     language: { type: DataTypes.STRING(5), allowNull: false, defaultValue: 'fr' },
     theme: { type: DataTypes.STRING(10), allowNull: false, defaultValue: 'light' },
+    // Réinitialisation de mot de passe : empreinte SHA-256 du jeton + expiration (cf. utils/resetToken.js).
+    resetTokenHash: { type: DataTypes.STRING(64), allowNull: true },
+    resetTokenExpires: { type: DataTypes.DATE, allowNull: true },
   },
   {
     tableName: 'users',
@@ -70,6 +85,7 @@ export function publicUser(u) {
     status: u.status,
     bio: u.bio || '',
     avatarUrl: u.avatarUrl || null,
+    provider: u.provider || 'local',
     createdAt: u.createdAt,
   };
 }

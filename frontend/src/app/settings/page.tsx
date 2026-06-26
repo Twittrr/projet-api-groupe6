@@ -5,21 +5,23 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Moon, Sun, Shield, LogOut, Globe, Camera } from 'lucide-react';
+import { Moon, Sun, Shield, LogOut, Globe, Camera, Bell, Lock } from 'lucide-react';
 import { api, apiError } from '@/lib/api';
 import { useRequireAuth } from '@/lib/useRequireAuth';
 import { useAuth } from '@/store/auth';
 import { useTheme } from '@/store/theme';
 import { useLang } from '@/store/lang';
 import { useT } from '@/lib/useT';
-import type { Lang } from '@/lib/i18n';
+import type { Lang, TKey } from '@/lib/i18n';
 import AppHeader from '@/components/AppHeader';
 import Avatar from '@/components/Avatar';
+import PasswordInput from '@/components/PasswordInput';
+import Flag from '@/components/Flag';
 
-const LANGS: { value: Lang; flag: string }[] = [
-  { value: 'fr', flag: '🇫🇷' },
-  { value: 'en', flag: '🇬🇧' },
-];
+const LANGS: { value: Lang }[] = [{ value: 'fr' }, { value: 'en' }];
+
+const NOTIF_TYPES = ['like', 'comment', 'follow', 'mention', 'message', 'repost'] as const;
+type NotifPrefs = Record<(typeof NOTIF_TYPES)[number], boolean>;
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -33,11 +35,36 @@ export default function SettingsPage() {
   const [bio, setBio] = useState('');
   const [msg, setMsg] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [notifPrefs, setNotifPrefs] = useState<NotifPrefs | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  // Changement de mot de passe
+  const [curPwd, setCurPwd] = useState('');
+  const [newPwd, setNewPwd] = useState('');
+  const [pwdMsg, setPwdMsg] = useState('');
+  const [pwdErr, setPwdErr] = useState('');
+  const [pwdLoading, setPwdLoading] = useState(false);
 
   useEffect(() => {
     if (user) { setDisplayName(user.displayName || ''); setBio(user.bio || ''); }
   }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    api.get('/notifications/preferences')
+      .then((r) => setNotifPrefs(r.data.data.preferences))
+      .catch(() => {});
+  }, [user]);
+
+  async function toggleNotif(type: (typeof NOTIF_TYPES)[number]) {
+    if (!notifPrefs) return;
+    const value = !notifPrefs[type];
+    setNotifPrefs({ ...notifPrefs, [type]: value }); // optimiste
+    try {
+      await api.put('/notifications/preferences', { [type]: value });
+    } catch {
+      setNotifPrefs({ ...notifPrefs, [type]: !value }); // rollback en cas d'échec
+    }
+  }
 
   if (!ready || !user) return <div className="flex h-screen items-center justify-center text-tx3">{t('common.loading')}</div>;
 
@@ -78,6 +105,22 @@ export default function SettingsPage() {
     try { await api.patch('/users/me/language', { language: l }); } catch {}
   }
 
+  async function changePassword() {
+    setPwdMsg('');
+    setPwdErr('');
+    setPwdLoading(true);
+    try {
+      await api.post('/auth/change-password', { currentPassword: curPwd, newPassword: newPwd });
+      setCurPwd('');
+      setNewPwd('');
+      setPwdMsg('Mot de passe mis à jour ✓');
+    } catch (err) {
+      setPwdErr(apiError(err));
+    } finally {
+      setPwdLoading(false);
+    }
+  }
+
   async function onLogout() {
     await logout();
     router.replace('/welcome');
@@ -107,7 +150,7 @@ export default function SettingsPage() {
             <span className="flex items-center gap-1.5"><Globe size={13} />{t('settings.language')}</span>
           </h2>
           <div className="flex gap-2">
-            {LANGS.map(({ value, flag }) => (
+            {LANGS.map(({ value }) => (
               <button
                 key={value}
                 onClick={() => changeLanguage(value)}
@@ -115,12 +158,31 @@ export default function SettingsPage() {
                   lang === value ? 'bg-ac text-white' : 'border border-bd2 text-tx hover:bg-sf2'
                 }`}
               >
-                <span>{flag}</span>
+                <Flag lang={value} />
                 {value === 'fr' ? t('settings.langFr') : t('settings.langEn')}
               </button>
             ))}
           </div>
         </section>
+
+        {/* Notifications — préférences par type */}
+        {notifPrefs && (
+          <section className="rounded-xl3 border border-bd bg-sf p-4">
+            <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-tx3">
+              <span className="flex items-center gap-1.5"><Bell size={13} />{t('settings.notifications')}</span>
+            </h2>
+            <div className="space-y-3">
+              {NOTIF_TYPES.map((type) => (
+                <button key={type} onClick={() => toggleNotif(type)} className="flex w-full items-center justify-between">
+                  <span className="text-sm text-tx">{t(`notifPref.${type}` as TKey)}</span>
+                  <span className={`relative h-6 w-11 rounded-full transition ${notifPrefs[type] ? 'bg-ac' : 'bg-bd2'}`}>
+                    <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-all ${notifPrefs[type] ? 'left-[22px]' : 'left-0.5'}`} />
+                  </span>
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Profil — Fx10 */}
         <section className="rounded-xl3 border border-bd bg-sf p-4">
@@ -170,6 +232,41 @@ export default function SettingsPage() {
           <button onClick={save} className="mt-3 w-full rounded-xl2 bg-ac py-2.5 font-semibold text-white">{t('settings.save')}</button>
           {msg && <p className="mt-2 text-sm text-ok">{msg}</p>}
         </section>
+
+        {/* Sécurité — changement de mot de passe (comptes locaux uniquement) */}
+        {user.provider !== 'google' && (
+          <section className="rounded-xl3 border border-bd bg-sf p-4">
+            <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-tx3">
+              <span className="flex items-center gap-1.5"><Lock size={13} />Mot de passe</span>
+            </h2>
+            <div className="space-y-3">
+              <PasswordInput
+                placeholder="Mot de passe actuel"
+                value={curPwd}
+                onChange={setCurPwd}
+                autoComplete="current-password"
+                className="h-11 w-full rounded-xl2 border border-bd2 bg-bg px-3 py-2 pr-12 text-tx outline-none focus:border-ac"
+              />
+              <PasswordInput
+                placeholder="Nouveau mot de passe (8+, maj, min, chiffre)"
+                value={newPwd}
+                onChange={setNewPwd}
+                autoComplete="new-password"
+                showStrength
+                className="h-11 w-full rounded-xl2 border border-bd2 bg-bg px-3 py-2 pr-12 text-tx outline-none focus:border-ac"
+              />
+              <button
+                onClick={changePassword}
+                disabled={pwdLoading || !curPwd || !newPwd}
+                className="w-full rounded-xl2 bg-ac py-2.5 font-semibold text-white disabled:opacity-60"
+              >
+                {pwdLoading ? 'Mise à jour…' : 'Changer le mot de passe'}
+              </button>
+              {pwdMsg && <p className="text-sm text-ok">{pwdMsg}</p>}
+              {pwdErr && <p className="text-sm text-err">{pwdErr}</p>}
+            </div>
+          </section>
+        )}
 
         {/* Administration — Fx21 (RBAC frontend) */}
         {(user.role === 'admin' || user.role === 'moderator') && (

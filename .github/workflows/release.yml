@@ -39,6 +39,7 @@ jobs:
           - { service: conversations, context: services/conversations }
           - { service: frontend,      context: frontend }
           - { service: gateway,       context: gateway }
+          - { service: seeder,        context: services/seeder }
     steps:
       - uses: actions/checkout@v4
 
@@ -70,7 +71,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           # NEXT_PUBLIC_API_URL n'est consommé que par le frontend (ignoré ailleurs).
           build-args: |
-            NEXT_PUBLIC_API_URL=/api
+            NEXT_PUBLIC_API_URL=/api/v1
           cache-from: type=gha
           cache-to: type=gha,mode=max
 

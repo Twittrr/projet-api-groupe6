@@ -10,11 +10,19 @@ export const env = {
     .map((o) => o.trim())
     .filter(Boolean),
 
+  // URL publique du frontend, pour construire le lien de réinitialisation de mot de passe.
+  appUrl: process.env.APP_URL || '',
+
   jwt: {
     accessSecret: process.env.JWT_ACCESS_SECRET || 'dev_access_secret',
     refreshSecret: process.env.JWT_REFRESH_SECRET || 'dev_refresh_secret',
     accessTtl: process.env.JWT_ACCESS_TTL || '15m',
     refreshTtl: process.env.JWT_REFRESH_TTL || '7d',
+  },
+
+  // Connexion fédérée Google (OpenID Connect). Vide => endpoint désactivé (503).
+  google: {
+    clientId: process.env.GOOGLE_CLIENT_ID || '',
   },
 
   db: {

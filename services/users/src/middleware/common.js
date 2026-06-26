@@ -88,6 +88,16 @@ export const ah = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)
 
 export const globalLimiter = rateLimit({ windowMs: 60 * 1000, max: 200, standardHeaders: true, legacyHeaders: false });
 
+// Limiteur d'écriture : protège les actions sociales (follow/unfollow) du spam et
+// de la génération massive de notifications. Seuils relâchés en développement.
+export const writeLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: process.env.NODE_ENV === 'production' ? 30 : 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { data: null, error: { code: 'RATE_LIMITED', message: "Trop d'actions. Réessayez plus tard." }, meta: null },
+});
+
 export function notFound(req, res) {
   return fail(res, 404, 'NOT_FOUND', `Route introuvable : ${req.method} ${req.originalUrl}`);
 }

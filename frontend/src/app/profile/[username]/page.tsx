@@ -6,8 +6,8 @@
  */
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { X, Settings, Shield, MessageSquare, ShieldOff, ShieldCheck } from 'lucide-react';
-import { api } from '@/lib/api';
+import { X, Settings, Shield, MessageSquare, ShieldOff, ShieldCheck, PauseCircle, PlayCircle, UserCog } from 'lucide-react';
+import { api, apiError } from '@/lib/api';
 import { useAuth } from '@/store/auth';
 import { useT } from '@/lib/useT';
 import Avatar from '@/components/Avatar';
@@ -93,7 +93,7 @@ export default function ProfilePage() {
   const [followModal, setFollowModal] = useState<FollowModal>(null);
   const [notFound, setNotFound] = useState(false);
   const [dmLoading, setDmLoading] = useState(false);
-  const [banLoading, setBanLoading] = useState(false);
+  const [modLoading, setModLoading] = useState(false);
 
   useEffect(() => {
     if (!username) return;
@@ -133,15 +133,31 @@ export default function ProfilePage() {
     }
   }
 
-  async function toggleBan() {
+  // Modération : applique un statut (active / suspended / banned).
+  async function setStatus(next: 'active' | 'suspended' | 'banned') {
     if (!profile) return;
-    const next = profile.status === 'banned' ? 'active' : 'banned';
-    setBanLoading(true);
+    setModLoading(true);
     try {
       await api.patch(`/users/${profile.id}/status`, { status: next });
       setProfile((p) => p && { ...p, status: next });
+    } catch (err) {
+      alert(apiError(err, 'Action de modération impossible.'));
     } finally {
-      setBanLoading(false);
+      setModLoading(false);
+    }
+  }
+
+  // Admin : change le rôle (promotion modérateur / rétrogradation).
+  async function setUserRole(role: 'user' | 'moderator') {
+    if (!profile) return;
+    setModLoading(true);
+    try {
+      await api.patch(`/users/${profile.id}/role`, { role });
+      setProfile((p) => p && { ...p, role });
+    } catch (err) {
+      alert(apiError(err, 'Changement de rôle impossible.'));
+    } finally {
+      setModLoading(false);
     }
   }
 
@@ -178,20 +194,35 @@ export default function ProfilePage() {
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                {(me?.role === 'admin' || me?.role === 'moderator') && (
-                  <button
-                    onClick={toggleBan}
-                    disabled={banLoading}
-                    aria-label={profile.status === 'banned' ? 'Débannir' : 'Bannir'}
-                    title={profile.status === 'banned' ? 'Débannir' : 'Bannir'}
-                    className={`flex h-9 w-9 items-center justify-center rounded-full border transition disabled:opacity-40 ${
-                      profile.status === 'banned'
-                        ? 'border-ok text-ok hover:bg-ok hover:text-white'
-                        : 'border-err text-err hover:bg-err hover:text-white'
-                    }`}
-                  >
-                    {profile.status === 'banned' ? <ShieldCheck size={15} /> : <ShieldOff size={15} />}
-                  </button>
+                {(me?.role === 'admin' || me?.role === 'moderator') && profile.role !== 'admin' && (
+                  <>
+                    <button
+                      onClick={() => setStatus(profile.status === 'suspended' ? 'active' : 'suspended')}
+                      disabled={modLoading}
+                      aria-label={profile.status === 'suspended' ? 'Réactiver' : 'Suspendre'}
+                      title={profile.status === 'suspended' ? 'Réactiver le compte' : 'Suspendre le compte'}
+                      className={`flex h-9 w-9 items-center justify-center rounded-full border transition disabled:opacity-40 ${
+                        profile.status === 'suspended'
+                          ? 'border-ok text-ok hover:bg-ok hover:text-white'
+                          : 'border-ac text-ac hover:bg-ac hover:text-white'
+                      }`}
+                    >
+                      {profile.status === 'suspended' ? <PlayCircle size={15} /> : <PauseCircle size={15} />}
+                    </button>
+                    <button
+                      onClick={() => setStatus(profile.status === 'banned' ? 'active' : 'banned')}
+                      disabled={modLoading}
+                      aria-label={profile.status === 'banned' ? 'Débannir' : 'Bannir'}
+                      title={profile.status === 'banned' ? 'Débannir' : 'Bannir'}
+                      className={`flex h-9 w-9 items-center justify-center rounded-full border transition disabled:opacity-40 ${
+                        profile.status === 'banned'
+                          ? 'border-ok text-ok hover:bg-ok hover:text-white'
+                          : 'border-err text-err hover:bg-err hover:text-white'
+                      }`}
+                    >
+                      {profile.status === 'banned' ? <ShieldCheck size={15} /> : <ShieldOff size={15} />}
+                    </button>
+                  </>
                 )}
                 <button
                   onClick={sendMessage}
@@ -223,7 +254,36 @@ export default function ProfilePage() {
                 Banni
               </span>
             )}
+            {profile.status === 'suspended' && (
+              <span className="inline-block rounded-full bg-ac2 px-2 py-0.5 text-xs font-semibold text-ac">
+                Suspendu
+              </span>
+            )}
           </div>
+
+          {/* Gestion du rôle (admin uniquement, sur un autre compte non-admin) */}
+          {!isMe && me?.role === 'admin' && profile.role !== 'admin' && (
+            <div className="mt-3 flex items-center gap-2">
+              <UserCog size={14} className="text-tx3" />
+              {profile.role === 'moderator' ? (
+                <button
+                  onClick={() => setUserRole('user')}
+                  disabled={modLoading}
+                  className="rounded-full border border-bd2 px-3 py-1 text-xs font-semibold text-tx transition hover:bg-sf disabled:opacity-40"
+                >
+                  Retirer le rôle modérateur
+                </button>
+              ) : (
+                <button
+                  onClick={() => setUserRole('moderator')}
+                  disabled={modLoading}
+                  className="rounded-full border border-ac px-3 py-1 text-xs font-semibold text-ac transition hover:bg-ac hover:text-white disabled:opacity-40"
+                >
+                  Promouvoir modérateur
+                </button>
+              )}
+            </div>
+          )}
           {profile.bio && <p className="mt-2 text-sm text-tx2">{profile.bio}</p>}
 
           <div className="mt-3 flex gap-4 text-sm">

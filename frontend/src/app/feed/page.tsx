@@ -12,6 +12,7 @@ import { useT } from '@/lib/useT';
 import AppShell from '@/components/AppShell';
 import StoryRail from '@/components/StoryRail';
 import PostCard from '@/components/PostCard';
+import { Logo } from '@/components/Logo';
 import type { Post } from '@/lib/types';
 
 type Tab = 'foryou' | 'following';
@@ -36,22 +37,31 @@ export default function FeedPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const load = useCallback((current: Tab) => {
-    setLoading(true);
-    setError('');
+  // silent = rafraîchissement auto (pas de spinner, pas d'écrasement d'erreur visible).
+  const load = useCallback((current: Tab, silent = false) => {
+    if (!silent) { setLoading(true); setError(''); }
     const url = current === 'following' ? '/posts/feed' : '/posts/explore';
     api.get(url)
       .then((r) => {
         const fetched: Post[] = r.data.data.posts ?? [];
         setPosts(fetched);
-        if (current === 'following' && fetched.length === 0) setTab('foryou');
+        if (!silent && current === 'following' && fetched.length === 0) setTab('foryou');
       })
-      .catch((err) => setError(apiError(err, t('feed.error'))))
-      .finally(() => setLoading(false));
+      .catch((err) => { if (!silent) setError(apiError(err, t('feed.error'))); })
+      .finally(() => { if (!silent) setLoading(false); });
   }, [t]);
 
   useEffect(() => {
     if (user) load(tab);
+  }, [user, tab, load]);
+
+  // Refresh auto sans recharger : toutes les 45 s + au retour sur l'onglet.
+  useEffect(() => {
+    if (!user) return;
+    const timer = setInterval(() => load(tab, true), 45_000);
+    const onVisible = () => { if (document.visibilityState === 'visible') load(tab, true); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => { clearInterval(timer); document.removeEventListener('visibilitychange', onVisible); };
   }, [user, tab, load]);
 
   if (!ready || !user) {
@@ -61,10 +71,7 @@ export default function FeedPage() {
   return (
     <AppShell>
       <header className="flex items-center justify-between bg-bg px-5 py-3 lg:hidden">
-        <div className="flex items-center gap-2">
-          <span className="serif flex h-8 w-8 items-center justify-center rounded-lg bg-tx text-base text-bg">d</span>
-          <span className="serif text-2xl text-tx">dad.</span>
-        </div>
+        <Logo size={32} withWord />
         <div className="flex items-center gap-2">
           <button onClick={() => router.push('/explore')} aria-label={t('nav.explore')} className="flex h-9 w-9 items-center justify-center rounded-full bg-sf text-tx2">
             <Search size={16} />

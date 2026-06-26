@@ -21,6 +21,7 @@ router.get('/health', (_req, res) => res.json({ data: { status: 'ok', service: '
 router.get('/stories', optionalAuth, ah(stories.listStories));
 router.get('/stories/:authorId', optionalAuth, ah(stories.getUserStories));
 router.post('/stories', authenticate, ah(stories.createStory));
+router.post('/stories/:authorId/view', authenticate, ah(stories.markStoriesViewed));
 
 // --- Découverte ---
 router.get('/feed', authenticate, ah(posts.getFeed));            // Fx5
@@ -50,6 +51,9 @@ router.post('/', authenticate, validate(createPostSchema), ah(posts.createPost))
 router.get('/:id', optionalAuth, ah(posts.getPost));             // Fx4
 router.patch('/:id', authenticate, validate(updatePostSchema), ah(posts.updatePost));
 router.delete('/:id', authenticate, ah(posts.deletePost));
+
+// --- Republication ---
+router.post('/:id/repost', authenticate, ah(posts.repostPost));
 
 // --- Likes (Fx6) ---
 router.post('/:id/like',     authenticate, ah(posts.likePost));

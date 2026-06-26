@@ -26,7 +26,8 @@ export function createApp() {
   // Médias uploadés (servis aussi via le gateway sur /uploads)
   app.use('/uploads', express.static(path.resolve('uploads')));
 
-  app.use('/api/posts', postsRoutes);
+  // Routes versionnées (/api/v1) + alias non versionné conservé pour rétro-compatibilité.
+  app.use(['/api/posts', '/api/v1/posts'], postsRoutes);
 
   app.use(notFound);
   app.use(errorHandler);

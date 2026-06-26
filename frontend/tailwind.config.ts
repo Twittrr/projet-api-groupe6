@@ -1,12 +1,12 @@
 import type { Config } from 'tailwindcss';
 
 /**
- * Tailwind config Breezy.
+ * Tailwind config Twittrr.
  *
  * Deux niveaux de couleurs coexistent intentionnellement :
  * - Tokens CSS-variables (c-*) : thémés clair/sombre via [data-theme].
- * - Palette statique (paper, ink, coral, moss) : utilisée dans les pages
- *   non-thémées comme l'onboarding, identique à la charte mockup "dad."
+ * - Palette statique (paper, ink, coral, moss) : conservée pour la charte
+ *   graphique historique du mockup.
  */
 const config: Config = {
   content: ['./src/**/*.{ts,tsx}'],
@@ -29,7 +29,7 @@ const config: Config = {
         ok:  'var(--c-ok)',
         err: 'var(--c-err)',
 
-        /* ---------- Palette statique mockup "dad." ---------- */
+        /* ---------- Palette statique (charte mockup) ---------- */
         paper: '#FBFAF6',
         ink: {
           50:  '#F7F6F2',

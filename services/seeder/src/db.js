@@ -18,6 +18,11 @@ export const sequelize = new Sequelize(
     port: Number(process.env.POSTGRES_PORT || 5432),
     dialect: 'postgres',
     logging: false,
+    // SSL requis par les bases managées (POSTGRES_SSL=true), comme auth/users.
+    dialectOptions:
+      process.env.POSTGRES_SSL === 'true'
+        ? { ssl: { require: true, rejectUnauthorized: false } }
+        : {},
   }
 );
 

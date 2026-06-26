@@ -3,6 +3,7 @@
  * @brief Stories éphémères : rail (regroupé par auteur), lecteur, publication.
  */
 import { Story } from '../models/story.model.js';
+import { getFollowingIds } from '../utils/services.js';
 import { ok, created } from '../utils/response.js';
 
 const GRADIENTS = [
@@ -15,14 +16,15 @@ const GRADIENTS = [
 ];
 
 /**
- * @brief Rail de stories : une entrée par auteur ayant une story active (≤ 24 h).
- * @param req Requête Express (auth optionnelle).
- * @param res Réponse Express ; renvoie `{ stories }` (max 30 auteurs).
+ * @brief Regroupe les stories par auteur pour le rail (fonction pure, testable).
+ *
+ * `seen` : un auteur n'est "vu" que si TOUTES ses stories actives le sont
+ * (`viewedBy` contient `userId`). Sa propre story est toujours "vue". Anonyme : non vu.
+ * @param stories Stories actives, triées du plus récent au plus ancien.
+ * @param userId  Utilisateur courant (ou null/undefined si anonyme).
+ * @returns Une entrée par auteur (max 30).
  */
-export async function listStories(req, res) {
-  const stories = await Story.find({ expiresAt: { $gt: new Date() } }).sort({ createdAt: -1 });
-
-  // Regroupement par auteur (la plus récente définit le dégradé du cercle)
+export function groupStories(stories, userId) {
   const byAuthor = new Map();
   for (const s of stories) {
     if (!byAuthor.has(s.authorId)) {
@@ -31,12 +33,45 @@ export async function listStories(req, res) {
         authorUsername: s.authorUsername,
         gradient: s.gradient,
         count: 0,
-        seen: req.user ? s.authorId === req.user.id : false,
+        seen: Boolean(userId), // authentifié : vu par défaut, invalidé par une story non vue
       });
     }
-    byAuthor.get(s.authorId).count += 1;
+    const g = byAuthor.get(s.authorId);
+    g.count += 1;
+    if (userId && s.authorId !== userId && !(s.viewedBy || []).includes(userId)) {
+      g.seen = false;
+    }
   }
-  return ok(res, { stories: [...byAuthor.values()].slice(0, 30) });
+  return [...byAuthor.values()].slice(0, 30);
+}
+
+/**
+ * @brief Rail de stories : une entrée par auteur SUIVI (+ soi-même) ayant une story active.
+ * @param req Requête Express (auth optionnelle).
+ * @param res Réponse Express ; renvoie `{ stories }` (max 30 auteurs).
+ */
+export async function listStories(req, res) {
+  const filter = { expiresAt: { $gt: new Date() } };
+  // #11b : abonnés uniquement — on ne montre que les auteurs suivis (+ soi-même).
+  if (req.user) {
+    const following = await getFollowingIds(req.user.id);
+    filter.authorId = { $in: [req.user.id, ...following] };
+  }
+  const stories = await Story.find(filter).sort({ createdAt: -1 });
+  return ok(res, { stories: groupStories(stories, req.user?.id) });
+}
+
+/**
+ * @brief Marque toutes les stories actives d'un auteur comme vues par l'utilisateur courant (#11a).
+ * @param req Requête Express authentifiée ; param `authorId`.
+ * @param res Réponse Express ; renvoie `{ viewed: true }`.
+ */
+export async function markStoriesViewed(req, res) {
+  await Story.updateMany(
+    { authorId: req.params.authorId, expiresAt: { $gt: new Date() } },
+    { $addToSet: { viewedBy: req.user.id } },
+  );
+  return ok(res, { viewed: true });
 }
 
 /**

@@ -13,6 +13,7 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/store/auth';
 import { useTheme } from '@/store/theme';
 import { useT } from '@/lib/useT';
+import { Logo } from '@/components/Logo';
 import Avatar from './Avatar';
 import RightSidebar from './RightSidebar';
 
@@ -57,8 +58,7 @@ export default function AppShell({ children }: Readonly<{ children: React.ReactN
       {/* ---- Navigation gauche (desktop) ---- */}
       <aside className="sticky top-0 hidden h-screen w-[240px] flex-shrink-0 flex-col px-3 py-5 lg:flex">
         <button onClick={() => router.push('/feed')} className="mb-6 flex items-center gap-2.5 px-3">
-          <span className="serif flex h-9 w-9 items-center justify-center rounded-xl bg-tx text-xl text-bg">d</span>
-          <span className="serif text-2xl text-tx">dad.</span>
+          <Logo size={36} withWord />
         </button>
 
         <nav className="flex flex-col gap-1">

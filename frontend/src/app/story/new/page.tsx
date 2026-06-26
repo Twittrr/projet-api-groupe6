@@ -10,12 +10,12 @@ import { useRequireAuth } from '@/lib/useRequireAuth';
 import AppHeader from '@/components/AppHeader';
 
 const GRADIENTS = [
-  'linear-gradient(135deg,#4B87F5,#1E3A5F)',
-  'linear-gradient(135deg,#7C3AED,#2563EB)',
-  'linear-gradient(135deg,#3E7C5A,#0F3D28)',
-  'linear-gradient(135deg,#B45309,#7C2D12)',
-  'linear-gradient(135deg,#0F766E,#134E4A)',
-  'linear-gradient(135deg,#DC2626,#7C2D12)',
+  'linear-gradient(135deg,#FF6F59,#C2412B)', // corail → brique
+  'linear-gradient(135deg,#3E7C5A,#1F4D38)', // mousse profonde
+  'linear-gradient(135deg,#2F8E86,#185A55)', // sapin / teal
+  'linear-gradient(135deg,#D69A3A,#A86A1E)', // ocre doré
+  'linear-gradient(135deg,#4E6E92,#2C3F55)', // bleu ardoise
+  'linear-gradient(135deg,#B5503A,#7C2D1E)', // terracotta
 ];
 
 export default function NewStoryPage() {

@@ -28,7 +28,7 @@ const instrumentSerif = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
-  title: 'Breezy — un journal social, plus lent, plus soigné',
+  title: 'Twittrr — un journal social, plus lent, plus soigné',
   description: 'Réseau social léger et réactif, optimisé mobile-first.',
 };
 

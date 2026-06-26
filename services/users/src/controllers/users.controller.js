@@ -182,6 +182,40 @@ export async function moderateStatus(req, res) {
   return ok(res, { user: publicUser(target) });
 }
 
+/** @brief (Admin) Change le rôle d'un compte (user/moderator/admin). Pas sur soi-même (anti-lockout). */
+export async function setRole(req, res) {
+  if (req.params.id === req.user.id) {
+    throw new AppError(403, 'FORBIDDEN', 'Vous ne pouvez pas changer votre propre rôle.');
+  }
+  const target = await User.findByPk(req.params.id);
+  if (!target) throw new AppError(404, 'NOT_FOUND', 'Utilisateur introuvable.');
+  target.role = req.body.role;
+  await target.save();
+  return ok(res, { user: publicUser(target) });
+}
+
+/**
+ * @brief Avatars publics par username (batch léger). Sert à afficher les photos de profil
+ * partout dans l'app sans dénormaliser l'avatar sur chaque post/commentaire.
+ * Query param : `usernames` (séparés par virgules, max 100).
+ */
+export async function avatarsByUsernames(req, res) {
+  const usernames = (req.query.usernames || '')
+    .split(',').map((u) => u.trim().toLowerCase()).filter(Boolean).slice(0, 100);
+  if (!usernames.length) return ok(res, { users: [] });
+  const users = await User.findAll({
+    where: { username: { [Op.in]: usernames } },
+    attributes: ['username', 'displayName', 'avatarUrl'],
+  });
+  return ok(res, {
+    users: users.map((u) => ({
+      username: u.username,
+      displayName: u.displayName || u.username,
+      avatarUrl: u.avatarUrl || null,
+    })),
+  });
+}
+
 // --- Endpoints internes (service-à-service) ---
 
 /** @brief (Interne) IDs des utilisateurs suivis, consommé par le service Posts. */

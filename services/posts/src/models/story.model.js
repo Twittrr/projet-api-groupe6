@@ -13,6 +13,7 @@ const StorySchema = new mongoose.Schema(
     gradient: { type: String, required: true }, // dégradé CSS de fond (cf. maquette)
     text: { type: String, maxlength: 120, default: '' },
     mediaUrl: { type: String, default: null },
+    viewedBy: { type: [String], default: [] }, // userIds ayant vu cette story (#11 état "vu")
     expiresAt: { type: Date, required: true },
   },
   { timestamps: true }

@@ -64,6 +64,29 @@ export const TEXT_POSTS = [
   "Si tu n'as pas de plante verte chez toi, commence par là.",
   "L'architecture de cette ville ne cesse de me surprendre.",
   "Terminé mon premier marathon. Le corps dit non, la tête dit encore.",
+  "Petit thread sur ce que j'ai appris en deux ans de freelance : facturer son temps, pas ses heures.",
+  "Le débat IA vs créativité humaine me fatigue. Les deux peuvent coexister, soyons sérieux.",
+  "Migré tout mon stack vers TypeScript. Aucun regret, que des types.",
+  "On parle beaucoup de productivité, rarement de repos. Pourtant l'un ne va pas sans l'autre.",
+  "Découvert un café de quartier avec le meilleur flat white de la ville. Adresse en MP.",
+  "Le minimalisme n'est pas vide, c'est de l'espace pour ce qui compte.",
+  "Conférence inspirante aujourd'hui sur le design éthique. On en ressort changé.",
+  "Premier potager sur le balcon : trois tomates, une immense fierté.",
+  "Relire un classique à dix ans d'intervalle, c'est lire un autre livre.",
+  "La meilleure feature, c'est souvent celle qu'on n'ajoute pas.",
+  "Concert hier soir, encore des frissons ce matin. La musique live, rien ne la remplace.",
+  "J'ai supprimé trois apps de mon téléphone. Mon attention me remercie déjà.",
+  "Le télétravail m'a appris une chose : la discipline vaut mieux que la motivation.",
+  "Expo photo ce week-end, mes cinq tirages préférés sont enfin au mur.",
+  "Apprendre une langue à l'âge adulte, c'est redevenir humble. J'adore ça.",
+  "Le bon code se lit comme une bonne phrase : sans avoir à le relire deux fois.",
+  "Randonnée de 20 km aujourd'hui. Les jambes parlent, l'esprit se tait enfin.",
+  "On surestime ce qu'on peut faire en un jour, on sous-estime ce qu'on peut faire en un an.",
+  "Nouvelle saison de ma série préférée. Soirée canapé non négociable.",
+  "Le café du matin est un rituel, pas une dépendance. (Je me mens peut-être.)",
+  "Atelier céramique terminé : mes mains se souviennent de la terre.",
+  "Investir dans une bonne paire de chaussures, c'est investir dans toutes ses marches futures.",
+  "La curiosité ne se gère pas, elle se nourrit.",
 ];
 
 export const QUOTES = [
@@ -112,7 +135,7 @@ export const BIOS = [
   'Lectrice compulsive et grande buveuse de thé.',
   'Musicien amateur, amateur de silence.',
   'Graphiste indépendant basé à Lyon.',
-  'Court le matin, code l'après-midi.',
+  "Court le matin, code l'après-midi.",
   'Jardine les week-ends, déploie en prod la semaine.',
   'Fan de jazz et d\'architecture brutaliste.',
   'Journaliste pigiste, toujours en quête du bon angle.',
@@ -131,20 +154,20 @@ export const TAGS = [
 ];
 
 export const GRADIENTS = [
-  'linear-gradient(135deg,#4B87F5,#1E3A5F)',
-  'linear-gradient(135deg,#7C3AED,#2563EB)',
-  'linear-gradient(135deg,#3E7C5A,#0F3D28)',
-  'linear-gradient(135deg,#B45309,#7C2D12)',
-  'linear-gradient(135deg,#0F766E,#134E4A)',
-  'linear-gradient(135deg,#E5E2D8,#C2BFB2)',
-  'linear-gradient(135deg,#2563EB,#7C3AED)',
-  'linear-gradient(135deg,#DC2626,#7C2D12)',
-  'linear-gradient(135deg,#F59E0B,#D97706)',
-  'linear-gradient(135deg,#10B981,#065F46)',
-  'linear-gradient(135deg,#6366F1,#4338CA)',
-  'linear-gradient(135deg,#EC4899,#9D174D)',
-  'linear-gradient(135deg,#14B8A6,#0F766E)',
-  'linear-gradient(135deg,#F97316,#C2410C)',
+  'linear-gradient(135deg,#FF6F59,#C2412B)', // corail → brique
+  'linear-gradient(135deg,#3E7C5A,#1F4D38)', // mousse profonde
+  'linear-gradient(135deg,#2F8E86,#185A55)', // sapin / teal
+  'linear-gradient(135deg,#D69A3A,#A86A1E)', // ocre doré
+  'linear-gradient(135deg,#B5503A,#7C2D1E)', // terracotta
+  'linear-gradient(135deg,#4E6E92,#2C3F55)', // bleu ardoise
+  'linear-gradient(135deg,#C2502E,#FF7A66)', // brique → corail
+  'linear-gradient(135deg,#5C7C5A,#34503A)', // sauge
+  'linear-gradient(135deg,#E0A458,#C2502E)', // sable → brique
+  'linear-gradient(135deg,#3E6FA3,#27496D)', // bleu encre
+  'linear-gradient(135deg,#8A5A6A,#5A3645)', // prune douce
+  'linear-gradient(135deg,#D98A4E,#A85A2E)', // abricot brûlé
+  'linear-gradient(135deg,#E5E2D8,#C2BFB2)', // papier (clair)
+  'linear-gradient(135deg,#2E7D78,#3E7C5A)', // teal → mousse
 ];
 
 export const COMMENTS = [
@@ -158,6 +181,9 @@ export const COMMENTS = [
   'Bien dit !', 'Félicitations !', 'Continue comme ça.', 'Tu as tout compris.',
   'C\'est exactement ça.', 'Beau travail.', 'J\'ai appris quelque chose.',
   'À mettre en pratique dès demain.',
+  'Quel match hier !', 'Allez les Bleus !', 'On y croit pour la finale.',
+  'Cette canicule est insupportable…', 'Même ressenti devant le match.',
+  'Vivement la prochaine étape du Tour.', 'L\'ambiance était folle hier soir.',
 ];
 
 export const REPLIES = [

@@ -5,7 +5,7 @@
  */
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Send, ChevronLeft, Users } from 'lucide-react';
+import { Send, ChevronLeft, Users, Trash2 } from 'lucide-react';
 import { api, apiError } from '@/lib/api';
 import { useRequireAuth } from '@/lib/useRequireAuth';
 import Avatar from '@/components/Avatar';
@@ -68,16 +68,43 @@ function mergeMentionList(suggestions: MentionUser[], results: MentionUser[], q:
   ].slice(0, 6);
 }
 
-function MessageBubble({ msg, isMine, currentUsername }: Readonly<{ msg: Message; isMine: boolean; currentUsername?: string }>) {
+function MessageBubble({ msg, isMine, currentUsername, onDelete }: Readonly<{ msg: Message; isMine: boolean; currentUsername?: string; onDelete: (id: string) => void }>) {
+  const [confirming, setConfirming] = useState(false);
+
+  if (msg.deleted) {
+    return (
+      <div className={`flex items-end gap-2 ${isMine ? 'flex-row-reverse' : 'flex-row'}`}>
+        {!isMine && <Avatar username={msg.authorUsername} size={28} />}
+        <div className={`flex max-w-[72%] flex-col gap-0.5 ${isMine ? 'items-end' : 'items-start'}`}>
+          <div className="rounded-2xl border border-bd px-3 py-2 text-sm italic text-tx3">Message supprimé</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className={`flex items-end gap-2 ${isMine ? 'flex-row-reverse' : 'flex-row'}`}>
+    <div className={`group flex items-end gap-2 ${isMine ? 'flex-row-reverse' : 'flex-row'}`}>
       {!isMine && <Avatar username={msg.authorUsername} size={28} />}
       <div className={`flex max-w-[72%] flex-col gap-0.5 ${isMine ? 'items-end' : 'items-start'}`}>
         {!isMine && <span className="px-1 text-[10px] text-tx3">@{msg.authorUsername}</span>}
         <div className={`rounded-2xl px-3 py-2 text-sm leading-relaxed ${isMine ? 'rounded-br-sm bg-ac text-white' : 'rounded-bl-sm bg-sf text-tx'}`}>
           {parseContent(msg.content, currentUsername, isMine)}
         </div>
-        <span className="px-1 text-[10px] text-tx3">{timeAgo(msg.createdAt)}</span>
+        <div className="flex items-center gap-2 px-1">
+          <span className="text-[10px] text-tx3">{timeAgo(msg.createdAt)}</span>
+          {isMine && !confirming && (
+            <button onClick={() => setConfirming(true)} aria-label="Supprimer le message"
+              className="text-tx3 opacity-0 transition group-hover:opacity-100 hover:text-err">
+              <Trash2 size={12} />
+            </button>
+          )}
+          {isMine && confirming && (
+            <span className="flex items-center gap-1.5 text-[10px]">
+              <button onClick={() => { onDelete(msg._id); setConfirming(false); }} className="font-semibold text-err">Supprimer</button>
+              <button onClick={() => setConfirming(false)} className="text-tx3">Annuler</button>
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -181,6 +208,17 @@ export default function ConversationPage() {
     }
   }
 
+  async function handleDelete(messageId: string) {
+    // Optimiste : on marque le message supprimé localement, rollback si l'API échoue.
+    setMessages((prev) => prev.map((m) => (m._id === messageId ? { ...m, deleted: true, content: '' } : m)));
+    try {
+      await api.delete(`/conversations/${id}/messages/${messageId}`);
+    } catch (err) {
+      setError(apiError(err, 'Impossible de supprimer le message.'));
+      loadMessages();
+    }
+  }
+
   if (!ready || !user) {
     return <div className="flex h-screen items-center justify-center text-tx3">Chargement…</div>;
   }
@@ -221,7 +259,7 @@ export default function ConversationPage() {
           <p className="py-10 text-center text-sm text-tx3">Aucun message. Soyez le premier à écrire !</p>
         )}
         {messages.map((msg) => (
-          <MessageBubble key={msg._id} msg={msg} isMine={msg.authorId === user.id} currentUsername={user.username} />
+          <MessageBubble key={msg._id} msg={msg} isMine={msg.authorId === user.id} currentUsername={user.username} onDelete={handleDelete} />
         ))}
         <div ref={bottomRef} />
       </main>

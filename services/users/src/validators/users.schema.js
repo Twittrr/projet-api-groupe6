@@ -14,6 +14,10 @@ export const moderateStatusSchema = z.object({
   status: z.enum(['active', 'suspended', 'banned']),
 });
 
+export const setRoleSchema = z.object({
+  role: z.enum(['user', 'moderator', 'admin']),
+});
+
 export const updateLanguageSchema = z.object({
   language: z.enum(['fr', 'en']),
 });

@@ -10,6 +10,7 @@ import {
   getConversation,
   listMessages,
   sendMessage,
+  deleteMessage,
   addMembers,
   removeMember,
   getUnreadCount,
@@ -30,6 +31,7 @@ router.post('/', ah(createConversation));
 router.get('/:id', ah(getConversation));
 router.get('/:id/messages', ah(listMessages));
 router.post('/:id/messages', ah(sendMessage));
+router.delete('/:id/messages/:messageId', ah(deleteMessage));
 router.patch('/:id/read', ah(markRead));
 router.post('/:id/members', ah(addMembers));
 router.delete('/:id/members/:userId', ah(removeMember));

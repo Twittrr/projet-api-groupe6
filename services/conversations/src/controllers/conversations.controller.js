@@ -30,6 +30,11 @@ function isParticipant(conv, userId) {
   return conv.participants.some((p) => p.userId === userId);
 }
 
+/** Seul l'auteur d'un message peut le supprimer. */
+export function canDeleteMessage(message, userId) {
+  return Boolean(message) && message.authorId === userId;
+}
+
 /** Extrait les usernames uniques mentionnés (@username) dans un texte. */
 function extractMentions(content) {
   const matches = content.match(/@(\w+)/g) ?? [];
@@ -305,6 +310,31 @@ export async function markRead(req, res) {
   clearMessageNotifications(req.params.id, req.user.id);
 
   return ok(res, { read: true });
+}
+
+/**
+ * @brief Supprime (soft-delete) un message dont on est l'auteur.
+ * Le message reste dans le fil des deux participants mais son contenu est vidé
+ * et `deleted` passe à true → l'autre voit « message supprimé » au prochain chargement.
+ */
+export async function deleteMessage(req, res) {
+  const conv = await Conversation.findById(req.params.id);
+  if (!conv) return fail(res, 404, 'NOT_FOUND', 'Conversation introuvable.');
+  if (!isParticipant(conv, req.user.id)) return fail(res, 403, 'FORBIDDEN', 'Accès refusé.');
+
+  const message = await Message.findOne({ _id: req.params.messageId, conversationId: req.params.id });
+  if (!message) return fail(res, 404, 'NOT_FOUND', 'Message introuvable.');
+  if (!canDeleteMessage(message, req.user.id)) {
+    return fail(res, 403, 'FORBIDDEN', 'Vous ne pouvez supprimer que vos propres messages.');
+  }
+
+  // Soft-delete : on vide le contenu (validators off sur findByIdAndUpdate).
+  const updated = await Message.findByIdAndUpdate(
+    message._id,
+    { deleted: true, content: '' },
+    { new: true },
+  );
+  return ok(res, { message: updated });
 }
 
 /** @brief Compteur de messages non lus dans toutes les conversations de l'utilisateur. */

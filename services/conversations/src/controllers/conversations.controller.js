@@ -128,6 +128,35 @@ export async function listConversations(req, res) {
   const conversations = await Conversation.find({
     'participants.userId': req.user.id,
   }).sort({ updatedAt: -1 }).limit(100);
+
+  // Auto-réparation : un participant dont username === userId est un UUID jamais
+  // résolu (service Users indisponible à la création). On re-résout puis on persiste,
+  // afin que les conversations corrompues s'affichent correctement dès ce chargement.
+  const staleIds = [...new Set(
+    conversations
+      .flatMap((c) => c.participants)
+      .filter((p) => p.username === p.userId)
+      .map((p) => p.userId),
+  )];
+  if (staleIds.length) {
+    const map = await resolveUsernames(staleIds);
+    const dirty = [];
+    for (const conv of conversations) {
+      let changed = false;
+      for (const p of conv.participants) {
+        if (p.username === p.userId && map[p.userId]) {
+          p.username = map[p.userId];
+          changed = true;
+        }
+      }
+      if (changed) {
+        conv.markModified('participants');
+        dirty.push(conv.save());
+      }
+    }
+    await Promise.allSettled(dirty);
+  }
+
   return ok(res, { conversations });
 }
 

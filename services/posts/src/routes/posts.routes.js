@@ -51,6 +51,9 @@ router.get('/:id', optionalAuth, ah(posts.getPost));             // Fx4
 router.patch('/:id', authenticate, validate(updatePostSchema), ah(posts.updatePost));
 router.delete('/:id', authenticate, ah(posts.deletePost));
 
+// --- Republication ---
+router.post('/:id/repost', authenticate, ah(posts.repostPost));
+
 // --- Likes (Fx6) ---
 router.post('/:id/like',     authenticate, ah(posts.likePost));
 router.delete('/:id/like',   authenticate, ah(posts.unlikePost));

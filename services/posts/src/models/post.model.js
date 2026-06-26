@@ -19,6 +19,10 @@ const PostSchema = new mongoose.Schema(
     media: { type: [MediaSchema], default: [] }, // Fx18 / Fx19
     likeCount: { type: Number, default: 0 },
     commentCount: { type: Number, default: 0 },
+    repostCount: { type: Number, default: 0 },
+    // Republication : référence le post original (null = post original). Contenu/média copiés à la création.
+    repostOf: { type: String, default: null },
+    repostOfUsername: { type: String, default: null },
   },
   { timestamps: true }
 );
@@ -26,5 +30,10 @@ const PostSchema = new mongoose.Schema(
 // Flux chronologique et profils
 PostSchema.index({ createdAt: -1 });
 PostSchema.index({ authorId: 1, createdAt: -1 });
+// Anti-doublon : un utilisateur ne republie un même post qu'une fois (index partiel sur les reposts).
+PostSchema.index(
+  { authorId: 1, repostOf: 1 },
+  { unique: true, partialFilterExpression: { repostOf: { $type: 'string' } } }
+);
 
 export const Post = mongoose.model('Post', PostSchema);

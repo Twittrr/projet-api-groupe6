@@ -37,8 +37,12 @@ export interface Post {
   media: Media[];
   likeCount: number;
   commentCount: number;
-  /** Nombre de repartages (non implémenté backend — toujours absent ou 0). */
+  /** Nombre de repartages. */
   repostCount?: number;
+  /** Si ce post est une republication : id du post original, sinon null/absent. */
+  repostOf?: string | null;
+  /** Nom de l'auteur du post original republié. */
+  repostOfUsername?: string | null;
   liked: boolean;
   /** true si l'utilisateur courant a bookmarké ce post. */
   bookmarked: boolean;

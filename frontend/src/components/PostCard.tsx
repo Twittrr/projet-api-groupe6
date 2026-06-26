@@ -9,9 +9,10 @@
  */
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Heart, MessageCircle, Repeat2, Bookmark, MoreHorizontal, Pencil, X } from 'lucide-react';
+import { Heart, MessageCircle, Repeat2, Bookmark, MoreHorizontal, Pencil, X, Trash2 } from 'lucide-react';
 import Avatar from './Avatar';
-import { api } from '@/lib/api';
+import { api, apiError } from '@/lib/api';
+import { useToast } from '@/store/toast';
 import { useAuth } from '@/store/auth';
 import { useLang } from '@/store/lang';
 import { useT } from '@/lib/useT';
@@ -40,8 +41,9 @@ function mediaStyle(url: string): React.CSSProperties {
   return { backgroundImage: `url(${resolved})`, backgroundSize: 'cover', backgroundPosition: 'center' };
 }
 
-function MediaBlock({ media }: Readonly<{ media: Media[] }>) {
+function MediaBlock({ media, onZoom }: Readonly<{ media: Media[]; onZoom: (url: string) => void }>) {
   if (!media?.length) return null;
+  const zoomable = (m: Media) => m.type === 'image' && !isGradient(m.url);
 
   if (media.length === 1) {
     const m = media[0];
@@ -52,21 +54,44 @@ function MediaBlock({ media }: Readonly<{ media: Media[] }>) {
         </video>
       );
     }
+    if (zoomable(m)) {
+      return (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onZoom(mediaUrl(m.url)); }}
+          aria-label="Agrandir l'image"
+          className="mt-2.5 block w-full cursor-zoom-in rounded-2xl"
+          style={{ aspectRatio: '4/3', ...mediaStyle(m.url) }}
+        />
+      );
+    }
     return <div className="mt-2.5 w-full rounded-2xl" style={{ aspectRatio: '4/3', ...mediaStyle(m.url) }} />;
   }
 
   return (
     <div className="mt-2.5 grid grid-cols-3 gap-1.5">
-      {media.slice(0, 3).map((m, i) => (
-        <div key={`${m.url}-${i}`} className="rounded-xl" style={{ aspectRatio: '1', ...mediaStyle(m.url) }} />
-      ))}
+      {media.slice(0, 3).map((m, i) =>
+        zoomable(m) ? (
+          <button
+            key={`${m.url}-${i}`}
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onZoom(mediaUrl(m.url)); }}
+            aria-label="Agrandir l'image"
+            className="cursor-zoom-in rounded-xl"
+            style={{ aspectRatio: '1', ...mediaStyle(m.url) }}
+          />
+        ) : (
+          <div key={`${m.url}-${i}`} className="rounded-xl" style={{ aspectRatio: '1', ...mediaStyle(m.url) }} />
+        )
+      )}
     </div>
   );
 }
 
-export default function PostCard({ post: initial }: Readonly<{ post: Post }>) {
+export default function PostCard({ post: initial, onDeleted }: Readonly<{ post: Post; onDeleted?: () => void }>) {
   const router = useRouter();
   const user = useAuth((s) => s.user);
+  const addToast = useToast((s) => s.addToast);
   const { lang } = useLang();
   const t = useT();
   const [post, setPost] = useState(initial);
@@ -77,6 +102,31 @@ export default function PostCard({ post: initial }: Readonly<{ post: Post }>) {
 
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState('');
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleted, setDeleted] = useState(false);
+  const [zoom, setZoom] = useState<string | null>(null);
+
+  async function doRepost() {
+    if (!user) { router.push('/login'); return; }
+    try {
+      await api.post(`/posts/${post.id}/repost`);
+      setPost((p) => ({ ...p, repostCount: (p.repostCount ?? 0) + 1 }));
+      addToast('Post republié.');
+    } catch (err) {
+      addToast(apiError(err, 'Republication impossible.'), 'error');
+    }
+  }
+
+  async function doDelete() {
+    try {
+      await api.delete(`/posts/${post.id}`);
+      addToast('Post supprimé.');
+      if (onDeleted) onDeleted(); else setDeleted(true);
+    } catch (err) {
+      addToast(apiError(err, 'Suppression impossible.'), 'error');
+      setConfirmDelete(false);
+    }
+  }
 
   async function saveEdit() {
     const content = editText.trim();
@@ -116,6 +166,8 @@ export default function PostCard({ post: initial }: Readonly<{ post: Post }>) {
 
   const displayName = post.authorDisplayName || post.authorUsername;
 
+  if (deleted) return null;
+
   return (
     <article className="animate-sin relative rounded-[24px] border border-bd bg-sf p-[15px]">
       {!editing && (
@@ -127,6 +179,11 @@ export default function PostCard({ post: initial }: Readonly<{ post: Post }>) {
       )}
 
       <div className="relative z-10">
+        {post.repostOfUsername && (
+          <div className="mb-1.5 flex items-center gap-1 text-[12px] text-tx3">
+            <Repeat2 size={13} /> Reposté de @{post.repostOfUsername}
+          </div>
+        )}
         <div className="flex items-center gap-[11px]">
           <button
             onClick={inner(() => router.push(`/profile/${post.authorUsername}`))}
@@ -142,13 +199,22 @@ export default function PostCard({ post: initial }: Readonly<{ post: Post }>) {
             <div className="text-[10px] text-tx4">{t('post.public')}</div>
           </div>
           {isAuthor ? (
-            <button
-              onClick={inner(() => { if (!editing) { setEditText(post.content); } setEditing((e) => !e); })}
-              aria-label={editing ? 'Annuler la modification' : 'Modifier'}
-              className="flex h-[30px] w-[30px] items-center justify-center text-tx3"
-            >
-              {editing ? <X size={15} /> : <Pencil size={15} />}
-            </button>
+            <div className="flex items-center">
+              <button
+                onClick={inner(() => { if (!editing) { setEditText(post.content); } setEditing((e) => !e); })}
+                aria-label={editing ? 'Annuler la modification' : 'Modifier'}
+                className="flex h-[30px] w-[30px] items-center justify-center text-tx3"
+              >
+                {editing ? <X size={15} /> : <Pencil size={15} />}
+              </button>
+              <button
+                onClick={inner(() => setConfirmDelete(true))}
+                aria-label="Supprimer"
+                className="flex h-[30px] w-[30px] items-center justify-center text-tx3 hover:text-err"
+              >
+                <Trash2 size={15} />
+              </button>
+            </div>
           ) : (
             <button
               onClick={inner(() => router.push(`/report?type=post&id=${post.id}`))}
@@ -159,6 +225,16 @@ export default function PostCard({ post: initial }: Readonly<{ post: Post }>) {
             </button>
           )}
         </div>
+
+        {confirmDelete && (
+          <div className="mt-2.5 flex items-center justify-between rounded-xl bg-err/10 px-3 py-2 text-sm">
+            <span className="text-err">Supprimer ce post ?</span>
+            <div className="flex gap-3">
+              <button onClick={inner(() => setConfirmDelete(false))} className="text-tx3 hover:text-tx">Annuler</button>
+              <button onClick={inner(doDelete)} className="font-semibold text-err">Supprimer</button>
+            </div>
+          </div>
+        )}
 
         {editing ? (
           <div className="mt-2.5">
@@ -191,7 +267,7 @@ export default function PostCard({ post: initial }: Readonly<{ post: Post }>) {
             ) : (
               <>
                 <p className="mt-2.5 text-[13px] leading-[1.55] text-tx2">{parseContent(post.content, user?.username)}</p>
-                <MediaBlock media={post.media} />
+                <MediaBlock media={post.media} onZoom={setZoom} />
               </>
             )}
 
@@ -220,15 +296,28 @@ export default function PostCard({ post: initial }: Readonly<{ post: Post }>) {
             <button onClick={inner(open)} className="flex items-center gap-[5px] text-[13px] text-tx3" aria-label={t('post.comment')}>
               <MessageCircle size={15} /> {post.commentCount}
             </button>
-            <span className="flex items-center gap-[5px] text-[13px] text-tx4" aria-hidden>
+            <button onClick={inner(doRepost)} className="flex items-center gap-[5px] text-[13px] text-tx3" aria-label="Republier">
               <Repeat2 size={15} /> {post.repostCount ?? 0}
-            </span>
+            </button>
           </div>
           <button onClick={inner(toggleBookmark)} aria-label={t('post.bookmark')} className="text-tx3">
             <Bookmark size={15} className={post.bookmarked ? 'fill-ac text-ac' : ''} />
           </button>
         </div>
       </div>
+
+      {zoom && (
+        <div
+          onClick={inner(() => setZoom(null))}
+          className="fixed inset-0 z-50 flex cursor-zoom-out items-center justify-center bg-black/90 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Image en plein écran"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={zoom} alt="" className="max-h-full max-w-full rounded-lg object-contain" />
+        </div>
+      )}
     </article>
   );
 }

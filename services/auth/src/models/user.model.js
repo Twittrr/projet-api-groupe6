@@ -60,6 +60,9 @@ export const User = sequelize.define(
     avatarUrl: { type: DataTypes.STRING, allowNull: true },
     language: { type: DataTypes.STRING(5), allowNull: false, defaultValue: 'fr' },
     theme: { type: DataTypes.STRING(10), allowNull: false, defaultValue: 'light' },
+    // Réinitialisation de mot de passe : empreinte SHA-256 du jeton + expiration (cf. utils/resetToken.js).
+    resetTokenHash: { type: DataTypes.STRING(64), allowNull: true },
+    resetTokenExpires: { type: DataTypes.DATE, allowNull: true },
   },
   {
     tableName: 'users',

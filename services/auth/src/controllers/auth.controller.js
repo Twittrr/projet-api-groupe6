@@ -11,6 +11,7 @@ import { signAccessToken, signRefreshToken, verifyRefresh } from '../utils/jwt.j
 import { ok, created, AppError } from '../utils/response.js';
 import { env } from '../config/env.js';
 import { REFRESH_COOKIE, REFRESH_COOKIE_PATH, refreshCookieOptions } from '../utils/cookies.js';
+import { generateResetToken, hashResetToken } from '../utils/resetToken.js';
 
 const BCRYPT_ROUNDS = 12;
 
@@ -221,6 +222,78 @@ export async function me(req, res) {
   const user = await User.findByPk(req.user.id);
   if (!user) throw new AppError(404, 'NOT_FOUND', 'Utilisateur introuvable.');
   return ok(res, { user: publicUser(user) });
+}
+
+/**
+ * @brief Change le mot de passe de la session courante (réglages).
+ * Vérifie l'ancien mot de passe, applique la politique du nouveau, puis révoque
+ * les autres sessions (refresh tokens des autres appareils) en gardant celle-ci.
+ */
+export async function changePassword(req, res) {
+  const { currentPassword, newPassword } = req.body;
+  const user = await User.findByPk(req.user.id);
+  if (!user) throw new AppError(404, 'NOT_FOUND', 'Utilisateur introuvable.');
+  if (!user.passwordHash) {
+    throw new AppError(400, 'NO_PASSWORD', "Ce compte n'utilise pas de mot de passe (connexion Google).");
+  }
+  if (!(await bcrypt.compare(currentPassword, user.passwordHash))) {
+    throw new AppError(401, 'INVALID_CREDENTIALS', 'Mot de passe actuel incorrect.');
+  }
+
+  user.passwordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
+  await user.save();
+
+  // Révoque les autres sessions ; conserve la session courante (jti du cookie de refresh).
+  let currentJti = null;
+  try { currentJti = verifyRefresh(req.cookies?.[REFRESH_COOKIE]).jti; } catch { /* pas de session courante valide */ }
+  await RefreshToken.update(
+    { revoked: true },
+    { where: { userId: user.id, revoked: false, ...(currentJti ? { jti: { [Op.ne]: currentJti } } : {}) } }
+  );
+  return ok(res, { changed: true });
+}
+
+/**
+ * @brief Demande de réinitialisation de mot de passe.
+ * Réponse TOUJOURS générique (n'expose pas l'existence d'un compte). Aucun e-mail
+ * n'est envoyé (pas de SMTP configuré) : le lien est journalisé côté serveur, et
+ * renvoyé dans la réponse HORS production uniquement, pour faciliter le test.
+ */
+export async function forgotPassword(req, res) {
+  const { email } = req.body;
+  const generic = { message: 'Si un compte existe pour cet e-mail, un lien de réinitialisation a été envoyé.' };
+
+  const user = await User.findOne({ where: { email } });
+  // Seuls les comptes locaux (avec mot de passe) peuvent réinitialiser.
+  if (user && user.passwordHash) {
+    const { token, tokenHash, expiresAt } = generateResetToken();
+    user.resetTokenHash = tokenHash;
+    user.resetTokenExpires = expiresAt;
+    await user.save();
+    const link = `${env.appUrl}/reset?token=${token}`;
+    console.log(`[auth] Lien de réinitialisation pour ${email} : ${link}`);
+    if (!env.isProd) return ok(res, { ...generic, resetToken: token, resetLink: link });
+  }
+  return ok(res, generic);
+}
+
+/**
+ * @brief Réinitialise le mot de passe via un jeton valide et non expiré.
+ * Invalide le jeton (usage unique) et révoque toutes les sessions par sécurité.
+ */
+export async function resetPassword(req, res) {
+  const { token, newPassword } = req.body;
+  const user = await User.findOne({
+    where: { resetTokenHash: hashResetToken(token), resetTokenExpires: { [Op.gt]: new Date() } },
+  });
+  if (!user) throw new AppError(400, 'INVALID_RESET', 'Jeton de réinitialisation invalide ou expiré.');
+
+  user.passwordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
+  user.resetTokenHash = null;
+  user.resetTokenExpires = null;
+  await user.save();
+  await RefreshToken.update({ revoked: true }, { where: { userId: user.id, revoked: false } });
+  return ok(res, { reset: true });
 }
 
 /**

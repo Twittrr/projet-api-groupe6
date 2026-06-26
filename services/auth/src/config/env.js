@@ -10,6 +10,9 @@ export const env = {
     .map((o) => o.trim())
     .filter(Boolean),
 
+  // URL publique du frontend, pour construire le lien de réinitialisation de mot de passe.
+  appUrl: process.env.APP_URL || '',
+
   jwt: {
     accessSecret: process.env.JWT_ACCESS_SECRET || 'dev_access_secret',
     refreshSecret: process.env.JWT_REFRESH_SECRET || 'dev_refresh_secret',

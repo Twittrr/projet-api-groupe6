@@ -43,6 +43,9 @@ async function migrate() {
   await sequelize.query(`ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS "googleId" VARCHAR(255)`);
   await sequelize.query(`ALTER TABLE IF EXISTS users ALTER COLUMN "passwordHash" DROP NOT NULL`);
   await sequelize.query(`CREATE UNIQUE INDEX IF NOT EXISTS users_google_id_uniq ON users ("googleId") WHERE "googleId" IS NOT NULL`);
+  // Réinitialisation de mot de passe (cf. utils/resetToken.js).
+  await sequelize.query(`ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS "resetTokenHash" VARCHAR(64)`);
+  await sequelize.query(`ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS "resetTokenExpires" TIMESTAMP WITH TIME ZONE`);
 }
 
 /** @brief Démarre le service (connexion PostgreSQL, sync du schéma, compte admin, écoute HTTP). */

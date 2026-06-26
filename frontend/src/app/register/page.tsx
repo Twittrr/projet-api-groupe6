@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/store/auth';
 import { apiError } from '@/lib/api';
 import { GoogleSignInButton } from '@/components/GoogleSignInButton';
+import PasswordInput from '@/components/PasswordInput';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -52,12 +53,12 @@ export default function RegisterPage() {
           value={form.email}
           onChange={set('email')}
         />
-        <input
-          type="password"
-          className="h-13 w-full rounded-xl2 border border-bd2 bg-sf px-4 py-3 text-tx outline-none focus:border-ac"
+        <PasswordInput
           placeholder="Mot de passe (8+, maj, min, chiffre)"
           value={form.password}
-          onChange={set('password')}
+          onChange={(v) => setForm((f) => ({ ...f, password: v }))}
+          autoComplete="new-password"
+          showStrength
         />
         {error && <p className="text-sm text-err">{error}</p>}
         <button

@@ -24,3 +24,31 @@ NotificationSchema.index({ userId: 1, createdAt: -1 });
 NotificationSchema.index({ createdAt: 1 }, { expireAfterSeconds: 90 * 24 * 3600 });
 
 export const Notification = mongoose.model('Notification', NotificationSchema);
+
+/** Types de notification activables/désactivables par l'utilisateur. */
+export const NOTIF_TYPES = ['like', 'comment', 'follow', 'mention', 'message'];
+
+// Préférences par utilisateur : un booléen par type, activé par défaut.
+const PreferenceSchema = new mongoose.Schema(
+  {
+    userId:  { type: String, required: true, unique: true, index: true },
+    like:    { type: Boolean, default: true },
+    comment: { type: Boolean, default: true },
+    follow:  { type: Boolean, default: true },
+    mention: { type: Boolean, default: true },
+    message: { type: Boolean, default: true },
+  },
+  { timestamps: true }
+);
+
+export const Preference = mongoose.model('NotificationPreference', PreferenceSchema);
+
+/**
+ * @brief Une notification de ce type est-elle autorisée pour ces préférences ?
+ * Pas de document (utilisateur sans préférences) ⇒ tout est autorisé (défaut).
+ * Un type vaut `false` ⇒ refusé ; absent ou `true` ⇒ autorisé.
+ */
+export function prefAllows(prefDoc, type) {
+  if (!prefDoc) return true;
+  return prefDoc[type] !== false;
+}

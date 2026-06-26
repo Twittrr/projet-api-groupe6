@@ -3,12 +3,14 @@
  * @file BottomNav.tsx
  * @brief Barre de navigation inférieure (mobile) — pill sombre flottant fidèle à la maquette.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Home, Compass, Plus, Bell, User, MessageSquare, type LucideIcon } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/store/auth';
+import { useToast } from '@/store/toast';
 import { useT } from '@/lib/useT';
+import type { TKey } from '@/lib/i18n';
 
 const HIDDEN_PATHS = new Set(['/login', '/register', '/welcome']);
 
@@ -57,9 +59,11 @@ export default function BottomNav() {
   const pathname = usePathname();
   const router = useRouter();
   const user = useAuth((s) => s.user);
+  const addToast = useToast((s) => s.addToast);
   const t = useT();
   const [unreadCount, setUnreadCount] = useState(0);
   const [unreadMessages, setUnreadMessages] = useState(0);
+  const prevUnread = useRef<number | null>(null);
 
   useEffect(() => {
     if (!user) { setUnreadCount(0); return; }
@@ -84,6 +88,20 @@ export default function BottomNav() {
     const timer = setInterval(fetchMsg, 30_000);
     return () => clearInterval(timer);
   }, [user]);
+
+  // Toast à l'arrivée d'une nouvelle notification (quand le compteur augmente).
+  // La 1re mesure ne déclenche rien : on mémorise juste la valeur initiale.
+  useEffect(() => {
+    if (prevUnread.current != null && unreadCount > prevUnread.current) {
+      api.get('/notifications')
+        .then((r) => {
+          const latest = r.data.data.notifications?.[0];
+          if (latest) addToast(`@${latest.actor.username} ${t(`notif.${latest.type}` as TKey)}`);
+        })
+        .catch(() => {});
+    }
+    prevUnread.current = unreadCount;
+  }, [unreadCount]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (pathname === '/notifications') setUnreadCount(0);

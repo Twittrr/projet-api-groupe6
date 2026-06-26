@@ -11,7 +11,7 @@ import mongoose from 'mongoose';
 import { z } from 'zod';
 import { fileURLToPath } from 'node:url';
 import { env } from './config.js';
-import { Notification } from './model.js';
+import { Notification, Preference, NOTIF_TYPES, prefAllows } from './model.js';
 
 // ---- Helpers réponse ----
 const ok   = (res, data, meta = null, status = 200) => res.status(status).json({ data, error: null, meta });
@@ -25,6 +25,15 @@ const internalNotifSchema = z.object({
   actor:   z.object({ id: z.string().min(1), username: z.string().min(1) }),
   payload: z.record(z.unknown()).default({}),
 });
+
+// ---- Schéma Zod pour la mise à jour des préférences (un booléen par type, tous optionnels) ----
+const preferencesSchema = z
+  .object(Object.fromEntries(NOTIF_TYPES.map((ty) => [ty, z.boolean()])))
+  .partial();
+
+// Construit l'objet préférences complet à renvoyer (valeur stockée ou défaut « activé »).
+const preferencesView = (prefDoc) =>
+  Object.fromEntries(NOTIF_TYPES.map((ty) => [ty, prefAllows(prefDoc, ty)]));
 
 // ---- Middlewares ----
 function authenticate(req, res, next) {
@@ -75,8 +84,31 @@ export function createApp() {
       return fail(res, 422, 'VALIDATION_ERROR', msg);
     }
     const { userId, type, actor, payload } = parsed.data;
+    // Respecte les préférences du destinataire : si ce type est désactivé, on n'émet rien.
+    const pref = await Preference.findOne({ userId });
+    if (!prefAllows(pref, type)) return ok(res, { skipped: true });
     const notif = await Notification.create({ userId, type, actor, payload });
     return ok(res, { notification: notif }, null, 201);
+  }));
+
+  // Préférences de notification de l'utilisateur courant
+  r.get('/preferences', authenticate, ah(async (req, res) => {
+    const pref = await Preference.findOne({ userId: req.user.id });
+    return ok(res, { preferences: preferencesView(pref) });
+  }));
+
+  r.put('/preferences', authenticate, ah(async (req, res) => {
+    const parsed = preferencesSchema.safeParse(req.body);
+    if (!parsed.success) {
+      const msg = parsed.error.issues[0]?.message || 'Données invalides.';
+      return fail(res, 422, 'VALIDATION_ERROR', msg);
+    }
+    const pref = await Preference.findOneAndUpdate(
+      { userId: req.user.id },
+      { $set: parsed.data },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+    return ok(res, { preferences: preferencesView(pref) });
   }));
 
   // Liste des notifications (50 dernières, paginées par `page`)

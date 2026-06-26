@@ -10,21 +10,15 @@ import { RefreshToken } from '../models/refreshToken.model.js';
 import { signAccessToken, signRefreshToken, verifyRefresh } from '../utils/jwt.js';
 import { ok, created, AppError } from '../utils/response.js';
 import { env } from '../config/env.js';
+import { REFRESH_COOKIE, REFRESH_COOKIE_PATH, refreshCookieOptions } from '../utils/cookies.js';
 
 const BCRYPT_ROUNDS = 12;
-const REFRESH_COOKIE = 'breezy_refresh';
 
 // Client OAuth Google, instancié une seule fois (réutilise le cache de clés publiques).
 const googleClient = env.google.clientId ? new OAuth2Client(env.google.clientId) : null;
 
 function setRefreshCookie(res, token) {
-  res.cookie(REFRESH_COOKIE, token, {
-    httpOnly: true,
-    secure: env.isProd,
-    sameSite: 'lax',
-    path: '/api/auth',
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-  });
+  res.cookie(REFRESH_COOKIE, token, refreshCookieOptions(env.isProd));
 }
 
 /**
@@ -216,7 +210,7 @@ export async function logout(req, res) {
       await RefreshToken.update({ revoked: true }, { where: { jti: payload.jti } });
     } catch { /* token déjà invalide ou expiré — pas d'erreur à remonter */ }
   }
-  res.clearCookie(REFRESH_COOKIE, { path: '/api/auth' });
+  res.clearCookie(REFRESH_COOKIE, { path: REFRESH_COOKIE_PATH });
   return ok(res, { loggedOut: true });
 }
 

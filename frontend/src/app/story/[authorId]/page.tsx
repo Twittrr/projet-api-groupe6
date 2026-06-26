@@ -24,6 +24,8 @@ export default function StoryPlayer() {
   useEffect(() => {
     if (!authorId) return;
     api.get(`/posts/stories/${authorId}`).then((r) => setStories(r.data.data.stories)).catch(() => {});
+    // #11a : marquer vu à l'ouverture → l'anneau passe en "gris" au prochain rendu du rail
+    api.post(`/posts/stories/${authorId}/view`).catch(() => {});
   }, [authorId]);
 
   useEffect(() => {

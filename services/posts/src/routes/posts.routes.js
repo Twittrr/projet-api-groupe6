@@ -21,6 +21,7 @@ router.get('/health', (_req, res) => res.json({ data: { status: 'ok', service: '
 router.get('/stories', optionalAuth, ah(stories.listStories));
 router.get('/stories/:authorId', optionalAuth, ah(stories.getUserStories));
 router.post('/stories', authenticate, ah(stories.createStory));
+router.post('/stories/:authorId/view', authenticate, ah(stories.markStoriesViewed));
 
 // --- Découverte ---
 router.get('/feed', authenticate, ah(posts.getFeed));            // Fx5

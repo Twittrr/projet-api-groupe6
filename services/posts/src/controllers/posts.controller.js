@@ -59,6 +59,9 @@ async function serialize(posts, viewerId) {
     media:           p.media,
     likeCount:       p.likeCount,
     commentCount:    p.commentCount,
+    repostCount:     p.repostCount,
+    repostOf:        p.repostOf || null,
+    repostOfUsername: p.repostOfUsername || null,
     liked:           likedSet.has(p._id.toString()),
     bookmarked:      bookmarkedSet.has(p._id.toString()),
     createdAt:       p.createdAt,
@@ -183,6 +186,48 @@ export async function deletePost(req, res) {
     Bookmark.deleteMany({ postId: post._id.toString() }),
   ]);
   return ok(res, { deleted: true });
+}
+
+/**
+ * @brief Republie un post : crée un nouveau post référant l'original (anti-doublon par utilisateur).
+ * Republier un repost remonte à la racine pour éviter les chaînes de reposts.
+ */
+export async function repostPost(req, res) {
+  const target = await Post.findById(req.params.id);
+  if (!target) throw new AppError(404, 'NOT_FOUND', 'Post introuvable.');
+
+  // Racine de la chaîne : on republie toujours le post original, pas un repost.
+  const rootId = target.repostOf || target._id.toString();
+  const root = target.repostOf ? await Post.findById(rootId) : target;
+  if (!root) throw new AppError(404, 'NOT_FOUND', 'Post original introuvable.');
+  if (root.authorId === req.user.id) {
+    throw new AppError(400, 'BAD_REQUEST', 'Vous ne pouvez pas republier votre propre post.');
+  }
+
+  let repost;
+  try {
+    repost = await Post.create({
+      authorId:         req.user.id,
+      authorUsername:   req.user.username,
+      content:          root.content,
+      tags:             root.tags,
+      media:            root.media,
+      repostOf:         rootId,
+      repostOfUsername: root.authorUsername,
+    });
+  } catch (err) {
+    if (err.code === 11000) throw new AppError(409, 'ALREADY_REPOSTED', 'Vous avez déjà republié ce post.');
+    throw err;
+  }
+
+  await Post.updateOne({ _id: rootId }, { $inc: { repostCount: 1 } });
+  emitNotification({
+    userId: root.authorId,
+    type: 'repost',
+    actor:   { id: req.user.id, username: req.user.username },
+    payload: { postId: rootId, excerpt: root.content.slice(0, 60) },
+  });
+  return created(res, { post: await serialize(repost, req.user.id) });
 }
 
 /**

@@ -94,7 +94,7 @@ export default function ThreadPage() {
       <AppHeader title="Discussion" back />
       <main className="flex-1 p-3 pb-20">
         {error && <p className="text-sm text-err">{error}</p>}
-        {post && <PostCard post={post} />}
+        {post && <PostCard post={post} onDeleted={() => router.push('/feed')} />}
 
         <div className="mt-4 space-y-2">
           {comments.map((c) => (

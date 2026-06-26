@@ -10,6 +10,16 @@ import { fileTypeFromFile } from 'file-type';
 import { ok, AppError } from '../utils/response.js';
 
 const UPLOAD_DIR = path.resolve('uploads');
+const IMAGE_MAX_BYTES = 4 * 1024 * 1024; // 4 Mo pour les images
+
+/**
+ * @brief Décide si un upload dépasse la limite image (4 Mo). Les vidéos gardent la limite Multer (10 Mo).
+ * @param mime Type MIME réel détecté (magic bytes).
+ * @param size Taille du fichier en octets.
+ */
+export function imageExceedsLimit(mime, size) {
+  return !String(mime).startsWith('video') && size > IMAGE_MAX_BYTES;
+}
 
 // Types MIME autorisés → extension de fichier
 const ALLOWED = {
@@ -56,12 +66,18 @@ export async function handleUpload(req, res) {
     throw new AppError(422, 'UNSUPPORTED_MEDIA', 'Contenu du fichier non autorisé ou corrompu.');
   }
 
+  // Limite spécifique aux images : 4 Mo (la vidéo garde la limite Multer de 10 Mo).
+  const type = detected.mime.startsWith('video') ? 'video' : 'image';
+  if (imageExceedsLimit(detected.mime, req.file.size)) {
+    await unlink(req.file.path).catch(() => {});
+    throw new AppError(413, 'IMAGE_TOO_LARGE', 'Image trop volumineuse (max 4 Mo).');
+  }
+
   // Renommage avec la vraie extension détectée
   const ext = ALLOWED[detected.mime];
   const finalName = req.file.filename.replace('.tmp', `.${ext}`);
   const finalPath = path.join(UPLOAD_DIR, finalName);
   await import('node:fs/promises').then(({ rename }) => rename(req.file.path, finalPath));
 
-  const type = detected.mime.startsWith('video') ? 'video' : 'image';
   return ok(res, { url: `/uploads/${finalName}`, type });
 }

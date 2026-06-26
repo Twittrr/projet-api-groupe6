@@ -49,18 +49,18 @@ export default function ModerationPage() {
     await resolve(r._id, 'reviewed');
   }
 
-  async function banAuthor(r: Report, andResolve = true) {
+  async function sanctionAuthor(r: Report, status: 'suspended' | 'banned', andResolve = true) {
     const username = r.snapshot?.authorUsername;
     if (!username) return;
     setBanningId(r._id);
     try {
       const found = await api.get(`/users/${username}`);
       const targetId: string = found.data.data.user.id;
-      await api.patch(`/users/${targetId}/status`, { status: 'banned' });
+      await api.patch(`/users/${targetId}/status`, { status });
       loadBanned();
       if (andResolve) await resolve(r._id, 'reviewed');
     } catch (err) {
-      alert(apiError(err, 'Impossible de bannir cet utilisateur.'));
+      alert(apiError(err, "Action impossible sur cet utilisateur."));
     } finally {
       setBanningId(null);
     }
@@ -136,11 +136,20 @@ export default function ModerationPage() {
                   )}
                   {r.snapshot?.authorUsername && (
                     <button
-                      onClick={() => banAuthor(r)}
+                      onClick={() => sanctionAuthor(r, 'suspended')}
+                      disabled={banningId === r._id}
+                      className="flex-1 rounded-xl2 border border-ac py-2 text-sm font-semibold text-ac transition hover:bg-ac hover:text-white disabled:opacity-40"
+                    >
+                      Suspendre l&apos;auteur
+                    </button>
+                  )}
+                  {r.snapshot?.authorUsername && (
+                    <button
+                      onClick={() => sanctionAuthor(r, 'banned')}
                       disabled={banningId === r._id}
                       className="flex-1 rounded-xl2 border border-err py-2 text-sm font-semibold text-err transition hover:bg-err hover:text-white disabled:opacity-40"
                     >
-                      {banningId === r._id ? 'Bannissement…' : 'Bannir l\'auteur'}
+                      {banningId === r._id ? 'En cours…' : 'Bannir l\'auteur'}
                     </button>
                   )}
                   <button

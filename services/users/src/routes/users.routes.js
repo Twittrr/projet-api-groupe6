@@ -5,7 +5,7 @@
 import { Router } from 'express';
 import * as ctrl from '../controllers/users.controller.js';
 import { authenticate, optionalAuth, requireRole, requireInternal, validate, ah, writeLimiter } from '../middleware/common.js';
-import { updateProfileSchema, moderateStatusSchema, updateLanguageSchema, updateThemeSchema } from '../validators/users.schema.js';
+import { updateProfileSchema, moderateStatusSchema, setRoleSchema, updateLanguageSchema, updateThemeSchema } from '../validators/users.schema.js';
 
 const router = Router();
 
@@ -14,6 +14,8 @@ router.get('/health', (_req, res) => res.json({ data: { status: 'ok', service: '
 // Recherche & suggestions
 router.get('/search', optionalAuth, ah(ctrl.searchUsers));
 router.get('/suggestions', authenticate, ah(ctrl.suggestions));
+// Avatars publics par username (affichage des photos de profil partout) — avant /:username
+router.get('/avatars', optionalAuth, ah(ctrl.avatarsByUsernames));
 
 // Profil courant
 router.patch('/me', authenticate, validate(updateProfileSchema), ah(ctrl.updateMe));
@@ -34,6 +36,8 @@ router.get('/:id/following', ah(ctrl.listFollowing));
 // Modération (Fx21)
 router.patch('/:id/status', authenticate, requireRole('moderator', 'admin'), validate(moderateStatusSchema), ah(ctrl.moderateStatus));
 router.get('/banned', authenticate, requireRole('moderator', 'admin'), ah(ctrl.listBanned));
+// Rôles (admin uniquement) : promouvoir/rétrograder modérateur
+router.patch('/:id/role', authenticate, requireRole('admin'), validate(setRoleSchema), ah(ctrl.setRole));
 
 // Profil public par username (en dernier : route la plus générique)
 router.get('/:username', optionalAuth, ah(ctrl.getProfile));

@@ -11,6 +11,7 @@ const MessageSchema = new mongoose.Schema(
     authorUsername: { type: String, required: true },
     content: { type: String, required: true, maxlength: 2000 },
     readBy: { type: [String], default: [] },
+    deleted: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

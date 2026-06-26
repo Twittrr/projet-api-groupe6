@@ -105,6 +105,7 @@ export interface Message {
   authorUsername: string;
   content: string;
   readBy: string[];
+  deleted?: boolean;
   createdAt: string;
 }
 

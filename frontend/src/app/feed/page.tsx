@@ -37,22 +37,31 @@ export default function FeedPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const load = useCallback((current: Tab) => {
-    setLoading(true);
-    setError('');
+  // silent = rafraîchissement auto (pas de spinner, pas d'écrasement d'erreur visible).
+  const load = useCallback((current: Tab, silent = false) => {
+    if (!silent) { setLoading(true); setError(''); }
     const url = current === 'following' ? '/posts/feed' : '/posts/explore';
     api.get(url)
       .then((r) => {
         const fetched: Post[] = r.data.data.posts ?? [];
         setPosts(fetched);
-        if (current === 'following' && fetched.length === 0) setTab('foryou');
+        if (!silent && current === 'following' && fetched.length === 0) setTab('foryou');
       })
-      .catch((err) => setError(apiError(err, t('feed.error'))))
-      .finally(() => setLoading(false));
+      .catch((err) => { if (!silent) setError(apiError(err, t('feed.error'))); })
+      .finally(() => { if (!silent) setLoading(false); });
   }, [t]);
 
   useEffect(() => {
     if (user) load(tab);
+  }, [user, tab, load]);
+
+  // Refresh auto sans recharger : toutes les 45 s + au retour sur l'onglet.
+  useEffect(() => {
+    if (!user) return;
+    const timer = setInterval(() => load(tab, true), 45_000);
+    const onVisible = () => { if (document.visibilityState === 'visible') load(tab, true); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => { clearInterval(timer); document.removeEventListener('visibilitychange', onVisible); };
   }, [user, tab, load]);
 
   if (!ready || !user) {

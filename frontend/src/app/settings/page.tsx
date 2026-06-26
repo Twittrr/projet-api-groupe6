@@ -16,11 +16,9 @@ import type { Lang, TKey } from '@/lib/i18n';
 import AppHeader from '@/components/AppHeader';
 import Avatar from '@/components/Avatar';
 import PasswordInput from '@/components/PasswordInput';
+import Flag from '@/components/Flag';
 
-const LANGS: { value: Lang; flag: string }[] = [
-  { value: 'fr', flag: '🇫🇷' },
-  { value: 'en', flag: '🇬🇧' },
-];
+const LANGS: { value: Lang }[] = [{ value: 'fr' }, { value: 'en' }];
 
 const NOTIF_TYPES = ['like', 'comment', 'follow', 'mention', 'message', 'repost'] as const;
 type NotifPrefs = Record<(typeof NOTIF_TYPES)[number], boolean>;
@@ -152,7 +150,7 @@ export default function SettingsPage() {
             <span className="flex items-center gap-1.5"><Globe size={13} />{t('settings.language')}</span>
           </h2>
           <div className="flex gap-2">
-            {LANGS.map(({ value, flag }) => (
+            {LANGS.map(({ value }) => (
               <button
                 key={value}
                 onClick={() => changeLanguage(value)}
@@ -160,7 +158,7 @@ export default function SettingsPage() {
                   lang === value ? 'bg-ac text-white' : 'border border-bd2 text-tx hover:bg-sf2'
                 }`}
               >
-                <span>{flag}</span>
+                <Flag lang={value} />
                 {value === 'fr' ? t('settings.langFr') : t('settings.langEn')}
               </button>
             ))}

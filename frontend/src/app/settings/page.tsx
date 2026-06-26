@@ -5,14 +5,14 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Moon, Sun, Shield, LogOut, Globe, Camera } from 'lucide-react';
+import { Moon, Sun, Shield, LogOut, Globe, Camera, Bell } from 'lucide-react';
 import { api, apiError } from '@/lib/api';
 import { useRequireAuth } from '@/lib/useRequireAuth';
 import { useAuth } from '@/store/auth';
 import { useTheme } from '@/store/theme';
 import { useLang } from '@/store/lang';
 import { useT } from '@/lib/useT';
-import type { Lang } from '@/lib/i18n';
+import type { Lang, TKey } from '@/lib/i18n';
 import AppHeader from '@/components/AppHeader';
 import Avatar from '@/components/Avatar';
 
@@ -20,6 +20,9 @@ const LANGS: { value: Lang; flag: string }[] = [
   { value: 'fr', flag: '🇫🇷' },
   { value: 'en', flag: '🇬🇧' },
 ];
+
+const NOTIF_TYPES = ['like', 'comment', 'follow', 'mention', 'message'] as const;
+type NotifPrefs = Record<(typeof NOTIF_TYPES)[number], boolean>;
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -33,11 +36,30 @@ export default function SettingsPage() {
   const [bio, setBio] = useState('');
   const [msg, setMsg] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [notifPrefs, setNotifPrefs] = useState<NotifPrefs | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (user) { setDisplayName(user.displayName || ''); setBio(user.bio || ''); }
   }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    api.get('/notifications/preferences')
+      .then((r) => setNotifPrefs(r.data.data.preferences))
+      .catch(() => {});
+  }, [user]);
+
+  async function toggleNotif(type: (typeof NOTIF_TYPES)[number]) {
+    if (!notifPrefs) return;
+    const value = !notifPrefs[type];
+    setNotifPrefs({ ...notifPrefs, [type]: value }); // optimiste
+    try {
+      await api.put('/notifications/preferences', { [type]: value });
+    } catch {
+      setNotifPrefs({ ...notifPrefs, [type]: !value }); // rollback en cas d'échec
+    }
+  }
 
   if (!ready || !user) return <div className="flex h-screen items-center justify-center text-tx3">{t('common.loading')}</div>;
 
@@ -121,6 +143,25 @@ export default function SettingsPage() {
             ))}
           </div>
         </section>
+
+        {/* Notifications — préférences par type */}
+        {notifPrefs && (
+          <section className="rounded-xl3 border border-bd bg-sf p-4">
+            <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-tx3">
+              <span className="flex items-center gap-1.5"><Bell size={13} />{t('settings.notifications')}</span>
+            </h2>
+            <div className="space-y-3">
+              {NOTIF_TYPES.map((type) => (
+                <button key={type} onClick={() => toggleNotif(type)} className="flex w-full items-center justify-between">
+                  <span className="text-sm text-tx">{t(`notifPref.${type}` as TKey)}</span>
+                  <span className={`relative h-6 w-11 rounded-full transition ${notifPrefs[type] ? 'bg-ac' : 'bg-bd2'}`}>
+                    <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-all ${notifPrefs[type] ? 'left-[22px]' : 'left-0.5'}`} />
+                  </span>
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Profil — Fx10 */}
         <section className="rounded-xl3 border border-bd bg-sf p-4">

@@ -1,0 +1,105 @@
+# =============================================================
+# Breezy — Gateway Nginx (TEMPLATE pour déploiement cloud)
+# Les ${*_UPSTREAM} sont substitués au démarrage par l'entrypoint nginx (envsubst).
+# La version LOCALE (load balancing des répliques docker-compose) est gateway/nginx.conf.
+#
+# IMPORTANT (Azure Container Apps) : l'ingress interne route selon le Host. On force donc
+# Host = FQDN interne de l'app cible (${*_UPSTREAM}), sinon ACA renvoie "app does not exist".
+# Sur ACA, *_UPSTREAM = <app>.internal.<defaultDomain>  (ex. breezy-auth.internal.xxx...).
+# =============================================================
+worker_processes auto;
+
+events {
+  worker_connections 1024;
+}
+
+http {
+  include       /etc/nginx/mime.types;
+  default_type  application/octet-stream;
+
+  server_tokens off;
+
+  log_format breezy '$remote_addr - [$time_iso8601] "$request" '
+                    '$status ${body_bytes_sent}o ${request_time}s '
+                    '-> $upstream_addr "$http_user_agent"';
+  access_log /var/log/nginx/access.log breezy;
+
+  sendfile on;
+  keepalive_timeout 65;
+  client_max_body_size 12M;
+
+  gzip on;
+  gzip_types text/plain text/css application/json application/javascript
+             application/xml image/svg+xml;
+  gzip_min_length 512;
+
+  limit_req_zone $binary_remote_addr zone=auth_limit:10m   rate=5r/s;
+  limit_req_zone $binary_remote_addr zone=api_limit:10m    rate=20r/s;
+  limit_req_zone $binary_remote_addr zone=upload_limit:10m rate=2r/s;
+  limit_req_status 429;
+
+  proxy_http_version 1.1;
+  proxy_set_header X-Real-IP         $remote_addr;
+  proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+  proxy_set_header X-Forwarded-Proto $scheme;
+
+  proxy_connect_timeout  10s;
+  proxy_send_timeout     30s;
+  proxy_read_timeout     30s;
+
+  server {
+    listen 80;
+    server_name _;
+
+    add_header X-Frame-Options          "SAMEORIGIN"                       always;
+    add_header X-Content-Type-Options   "nosniff"                          always;
+    add_header Referrer-Policy          "strict-origin-when-cross-origin"  always;
+    add_header Permissions-Policy       "camera=(), microphone=(), geolocation=()" always;
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' ws: wss:; media-src 'self' blob:; object-src 'none'; frame-ancestors 'self'; base-uri 'self'; form-action 'self';" always;
+
+    location /api/auth {
+      limit_req zone=auth_limit burst=20 nodelay;
+      proxy_set_header Host ${AUTH_UPSTREAM};
+      proxy_pass http://${AUTH_UPSTREAM};
+    }
+
+    location /api/users {
+      limit_req zone=api_limit burst=50 nodelay;
+      proxy_set_header Host ${USERS_UPSTREAM};
+      proxy_pass http://${USERS_UPSTREAM};
+    }
+    location /api/posts {
+      limit_req zone=api_limit burst=50 nodelay;
+      proxy_set_header Host ${POSTS_UPSTREAM};
+      proxy_pass http://${POSTS_UPSTREAM};
+    }
+    location /api/notifications {
+      limit_req zone=api_limit burst=50 nodelay;
+      proxy_set_header Host ${NOTIFICATIONS_UPSTREAM};
+      proxy_pass http://${NOTIFICATIONS_UPSTREAM};
+    }
+    location /api/conversations {
+      limit_req zone=api_limit burst=50 nodelay;
+      proxy_set_header Host ${CONVERSATIONS_UPSTREAM};
+      proxy_pass http://${CONVERSATIONS_UPSTREAM};
+    }
+
+    location /uploads/ {
+      limit_req zone=upload_limit burst=10 nodelay;
+      proxy_set_header Host ${POSTS_UPSTREAM};
+      proxy_pass http://${POSTS_UPSTREAM};
+    }
+
+    location = /healthz {
+      access_log off;
+      return 200 'gateway-ok\n';
+    }
+
+    location / {
+      proxy_set_header Host ${FRONTEND_UPSTREAM};
+      proxy_pass http://${FRONTEND_UPSTREAM};
+      proxy_set_header Upgrade    $http_upgrade;
+      proxy_set_header Connection "upgrade";
+    }
+  }
+}

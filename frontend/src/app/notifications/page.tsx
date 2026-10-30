@@ -1,0 +1,77 @@
+'use client';
+/**
+ * @file notifications/page.tsx
+ * @brief Écran d'activité (likes, réponses, nouveaux abonnés, mentions — Fx14/Fx15/Fx16).
+ */
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Heart, MessageCircle, UserPlus, AtSign, MessageSquare } from 'lucide-react';
+import { api } from '@/lib/api';
+import { useRequireAuth } from '@/lib/useRequireAuth';
+import { useLang } from '@/store/lang';
+import { useT } from '@/lib/useT';
+import Avatar from '@/components/Avatar';
+import AppShell from '@/components/AppShell';
+import { timeAgo } from '@/lib/helpers';
+import type { Notification } from '@/lib/types';
+
+const ICON = { like: Heart, comment: MessageCircle, follow: UserPlus, mention: AtSign, message: MessageSquare };
+
+export default function NotificationsPage() {
+  const router = useRouter();
+  const { user, ready } = useRequireAuth();
+  const { lang } = useLang();
+  const t = useT();
+  const [items, setItems] = useState<Notification[]>([]);
+
+  const LABEL: Record<string, string> = {
+    like:    t('notif.like'),
+    comment: t('notif.comment'),
+    follow:  t('notif.follow'),
+    mention: t('notif.mention'),
+    message: t('notif.message'),
+  };
+
+  useEffect(() => {
+    if (!user) return;
+    api.get('/notifications').then((r) => setItems(r.data.data.notifications)).catch(() => {});
+    api.post('/notifications/read-all').catch(() => {});
+  }, [user]);
+
+  if (!ready || !user) return <div className="flex h-screen items-center justify-center text-tx3">{t('common.loading')}</div>;
+
+  return (
+    <AppShell>
+      <header className="sticky top-0 z-20 border-b border-bd bg-bg/90 px-4 py-3 backdrop-blur">
+        <h1 className="serif text-2xl text-tx">{t('notif.title')}</h1>
+      </header>
+      <main className="divide-y divide-bd pb-24 lg:pb-6">
+        {items.length === 0 && <p className="py-16 text-center text-tx3">{t('notif.empty')}</p>}
+        {items.map((n) => {
+          const Icon = ICON[n.type as keyof typeof ICON] || Heart;
+          const postId = n.payload?.postId as string | undefined;
+          const convId = n.payload?.conversationId as string | undefined;
+          let destination = `/profile/${n.actor.username}`;
+          if (convId) destination = `/messages/${convId}`;
+          else if (postId) destination = `/post/${postId}`;
+          return (
+            <button
+              key={n._id}
+              onClick={() => router.push(destination)}
+              className={`flex w-full items-center gap-3 p-3 text-left ${n.read ? '' : 'bg-ac2'}`}
+            >
+              <Avatar username={n.actor.username} size={40} />
+              <div className="flex-1">
+                <p className="text-sm text-tx">
+                  <b>@{n.actor.username}</b> {LABEL[n.type] ?? n.type}
+                </p>
+                <span className="text-xs text-tx3">{timeAgo(n.createdAt, lang)}</span>
+              </div>
+              <Icon size={18} className="text-ac" />
+            </button>
+          );
+        })}
+      </main>
+    </AppShell>
+  );
+}

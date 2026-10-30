@@ -1,0 +1,932 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>DAD — Mockup</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Inter', 'ui-sans-serif', 'system-ui'],
+          serif: ['"Instrument Serif"', 'ui-serif', 'Georgia'],
+        },
+        colors: {
+          ink:   { 50:'#F7F6F2', 100:'#EFEDE4', 200:'#DFDBCC', 900:'#111110', 950:'#0A0A09' },
+          paper: '#FBFAF6',
+          coral: { 400:'#FF7A66', 500:'#FF5C45', 600:'#E94A35' },
+          moss:  { 500:'#3E7C5A' },
+        },
+        boxShadow: {
+          'soft': '0 1px 0 rgba(17,17,16,0.04), 0 8px 24px -12px rgba(17,17,16,0.18)',
+          'phone': '0 30px 80px -20px rgba(17,17,16,0.35), 0 8px 24px -8px rgba(17,17,16,0.25)',
+        },
+      },
+    },
+  };
+</script>
+<style>
+  html, body { background:#E9E6DC; }
+  body { font-family: 'Inter', system-ui, sans-serif; color:#111110; }
+  /* hide scrollbars in scrolling regions */
+  .no-scrollbar::-webkit-scrollbar { display:none; }
+  .no-scrollbar { scrollbar-width:none; }
+  /* phone screen */
+  .screen { display:none; }
+  .screen.active { display:flex; }
+  /* tab indicator */
+  .tab-active i { color:#111110; }
+  .tab-active span { color:#111110; }
+  /* serif accent */
+  .serif { font-family:'Instrument Serif', serif; letter-spacing:-0.01em; }
+  /* subtle paper grain */
+  .grain { background-image:
+      radial-gradient(rgba(0,0,0,0.025) 1px, transparent 1px),
+      radial-gradient(rgba(0,0,0,0.02) 1px, transparent 1px);
+    background-size: 3px 3px, 7px 7px;
+    background-position: 0 0, 1px 2px;
+  }
+  /* line clamp helper */
+  .clamp-3 { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+  /* sticky safe areas inside phone */
+  .phone-shell { position:relative; }
+  /* ring outline for avatars */
+  .ring-coral { box-shadow: 0 0 0 2px #FBFAF6, 0 0 0 4px #FF5C45; }
+
+  /* desktop = phone frame, mobile = full screen */
+  @media (max-width: 640px) {
+    .phone-frame { border-radius:0 !important; box-shadow:none !important; height:100vh !important; width:100vw !important; }
+    .device-wrap { padding:0 !important; min-height:100vh !important; }
+    .desktop-only { display:none !important; }
+  }
+</style>
+</head>
+<body class="min-h-screen">
+
+<!-- DESKTOP CHROME / DEVICE WRAP -->
+<div class="device-wrap min-h-screen w-full flex flex-col lg:flex-row items-start justify-center gap-10 p-6 lg:p-12">
+
+  <!-- Left side: brand / nav legend (desktop only) -->
+  <aside class="desktop-only w-full max-w-xs pt-8">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-2xl bg-ink-950 text-paper flex items-center justify-center serif text-2xl">d</div>
+      <div>
+        <div class="serif text-3xl leading-none">dad.</div>
+        <div class="text-xs text-ink-900/60 -mt-0.5">brouillon · v0.1</div>
+      </div>
+    </div>
+    <p class="serif text-2xl leading-snug mt-8">Un journal social, <em>plus lent</em>, plus soigné.</p>
+    <p class="text-sm text-ink-900/70 mt-3">Maquette interactive. Toutes les écrans sont accessibles via la barre du bas. Les formulaires sont en bypass — appuyez sur n'importe quel bouton pour avancer.</p>
+
+    <div class="mt-8 space-y-2">
+      <div class="text-xs uppercase tracking-widest text-ink-900/50">Aller à</div>
+      <div class="grid grid-cols-2 gap-2 text-sm" id="jumpButtons"></div>
+    </div>
+
+    <div class="mt-8 text-xs text-ink-900/50 leading-relaxed">
+      <p><strong class="text-ink-900/80">Inspirations :</strong> chaleur d'Instagram, immédiateté de X, mais format <em>carnet</em> : typo serif, papier, accent corail, géométrie douce.</p>
+    </div>
+  </aside>
+
+  <!-- PHONE -->
+  <div class="phone-frame relative bg-paper rounded-[44px] shadow-phone overflow-hidden"
+       style="width:390px; height:844px;">
+    <!-- notch -->
+    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-7 bg-ink-950 rounded-b-2xl z-50 desktop-only"></div>
+
+    <!-- status bar -->
+    <div class="absolute top-0 inset-x-0 h-11 flex items-center justify-between px-6 text-[11px] font-semibold text-ink-950 z-40 pointer-events-none">
+      <span>9:41</span>
+      <span class="flex items-center gap-1">
+        <i data-lucide="signal" class="w-3.5 h-3.5"></i>
+        <i data-lucide="wifi" class="w-3.5 h-3.5"></i>
+        <i data-lucide="battery-full" class="w-4 h-4"></i>
+      </span>
+    </div>
+
+    <!-- SCREENS CONTAINER -->
+    <div class="phone-shell w-full h-full pt-11">
+
+      <!-- ============== ONBOARDING ============== -->
+      <section data-screen="onboarding" class="screen active flex-col w-full h-full grain">
+        <div class="flex-1 flex flex-col justify-between p-7">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-xl bg-ink-950 text-paper flex items-center justify-center serif text-lg">d</div>
+              <span class="serif text-2xl">dad.</span>
+            </div>
+            <button data-go="feed" class="text-xs text-ink-900/60 underline-offset-4 hover:underline">passer</button>
+          </div>
+
+          <div>
+            <h1 class="serif text-5xl leading-[0.95]">Écris<br/>moins.<br/><em class="text-coral-500">Pense</em> mieux.</h1>
+            <p class="text-ink-900/70 mt-5 text-[15px] leading-relaxed">Un fil pour partager une idée, une image, un instant — sans la course aux likes.</p>
+          </div>
+
+          <div class="space-y-3">
+            <button data-go="signup" class="w-full h-12 rounded-2xl bg-ink-950 text-paper font-semibold text-sm">Créer un compte</button>
+            <button data-go="login" class="w-full h-12 rounded-2xl border border-ink-200 bg-paper text-ink-950 font-semibold text-sm">J'ai déjà un compte</button>
+            <p class="text-center text-[11px] text-ink-900/50 pt-2">En continuant, vous acceptez les <u>CGU</u> et la <u>politique de confidentialité</u>.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============== LOGIN ============== -->
+      <section data-screen="login" class="screen flex-col w-full h-full">
+        <header class="px-5 pt-3 pb-2 flex items-center justify-between">
+          <button data-go="onboarding" class="w-9 h-9 rounded-full bg-ink-100 flex items-center justify-center"><i data-lucide="arrow-left" class="w-4 h-4"></i></button>
+          <span class="text-xs text-ink-900/50">démo · auth bypass</span>
+        </header>
+        <div class="flex-1 px-7 pt-2 overflow-y-auto no-scrollbar">
+          <h2 class="serif text-4xl leading-tight">Bon retour.</h2>
+          <p class="text-ink-900/60 mt-1 text-sm">Connectez‑vous avec votre identifiant.</p>
+
+          <form class="mt-7 space-y-4" onsubmit="event.preventDefault(); go('feed');">
+            <label class="block">
+              <span class="text-[11px] uppercase tracking-widest text-ink-900/50">Identifiant</span>
+              <input class="mt-1 w-full h-12 px-4 rounded-2xl bg-ink-100/70 border border-transparent focus:border-ink-950 focus:bg-paper outline-none text-sm" placeholder="@vous" />
+            </label>
+            <label class="block">
+              <span class="text-[11px] uppercase tracking-widest text-ink-900/50">Mot de passe</span>
+              <input type="password" class="mt-1 w-full h-12 px-4 rounded-2xl bg-ink-100/70 border border-transparent focus:border-ink-950 focus:bg-paper outline-none text-sm" placeholder="••••••••" />
+            </label>
+            <div class="flex items-center justify-between text-xs">
+              <label class="flex items-center gap-2 text-ink-900/70"><input type="checkbox" class="accent-ink-950"/> Se souvenir</label>
+              <a class="text-coral-600 font-medium">Oublié ?</a>
+            </div>
+            <button type="submit" class="w-full h-12 rounded-2xl bg-ink-950 text-paper font-semibold text-sm">Se connecter</button>
+          </form>
+
+          <div class="mt-6 flex items-center gap-3 text-[11px] text-ink-900/40">
+            <div class="h-px flex-1 bg-ink-200"></div>OU<div class="h-px flex-1 bg-ink-200"></div>
+          </div>
+          <div class="mt-4 grid grid-cols-2 gap-3">
+            <button data-go="feed" class="h-12 rounded-2xl border border-ink-200 flex items-center justify-center gap-2 text-sm font-medium"><i data-lucide="apple" class="w-4 h-4"></i>Apple</button>
+            <button data-go="feed" class="h-12 rounded-2xl border border-ink-200 flex items-center justify-center gap-2 text-sm font-medium"><i data-lucide="chrome" class="w-4 h-4"></i>Google</button>
+          </div>
+
+          <p class="text-center text-xs text-ink-900/60 mt-8">Pas de compte ? <a data-go="signup" class="text-ink-950 font-semibold cursor-pointer">Créer</a></p>
+        </div>
+      </section>
+
+      <!-- ============== SIGNUP ============== -->
+      <section data-screen="signup" class="screen flex-col w-full h-full">
+        <header class="px-5 pt-3 pb-2 flex items-center justify-between">
+          <button data-go="onboarding" class="w-9 h-9 rounded-full bg-ink-100 flex items-center justify-center"><i data-lucide="arrow-left" class="w-4 h-4"></i></button>
+          <span class="text-xs text-ink-900/50">étape 1/3</span>
+        </header>
+        <div class="flex-1 px-7 pt-2 overflow-y-auto no-scrollbar pb-6">
+          <h2 class="serif text-4xl leading-tight">Crée ton<br/>carnet.</h2>
+          <p class="text-ink-900/60 mt-1 text-sm">Choisis un nom — tu pourras le changer.</p>
+
+          <div class="mt-6 flex items-center gap-4">
+            <div class="w-20 h-20 rounded-3xl bg-ink-100 flex items-center justify-center serif text-3xl text-ink-900/40">aa</div>
+            <button class="text-sm font-semibold underline-offset-4 underline">Ajouter une photo</button>
+          </div>
+
+          <form class="mt-7 space-y-4" onsubmit="event.preventDefault(); go('feed');">
+            <label class="block">
+              <span class="text-[11px] uppercase tracking-widest text-ink-900/50">Nom affiché</span>
+              <input class="mt-1 w-full h-12 px-4 rounded-2xl bg-ink-100/70 outline-none text-sm" placeholder="Ada L." />
+            </label>
+            <label class="block">
+              <span class="text-[11px] uppercase tracking-widest text-ink-900/50">Identifiant</span>
+              <div class="mt-1 flex items-center h-12 px-4 rounded-2xl bg-ink-100/70">
+                <span class="text-ink-900/40 text-sm">@</span>
+                <input class="flex-1 bg-transparent outline-none ml-1 text-sm" placeholder="ada" />
+                <i data-lucide="check" class="w-4 h-4 text-moss-500"></i>
+              </div>
+            </label>
+            <label class="block">
+              <span class="text-[11px] uppercase tracking-widest text-ink-900/50">Email</span>
+              <input class="mt-1 w-full h-12 px-4 rounded-2xl bg-ink-100/70 outline-none text-sm" placeholder="ada@dad.app" />
+            </label>
+            <label class="block">
+              <span class="text-[11px] uppercase tracking-widest text-ink-900/50">Mot de passe</span>
+              <input type="password" class="mt-1 w-full h-12 px-4 rounded-2xl bg-ink-100/70 outline-none text-sm" placeholder="••••••••" />
+            </label>
+
+            <div class="pt-2">
+              <button type="submit" class="w-full h-12 rounded-2xl bg-coral-500 text-paper font-semibold text-sm">Continuer</button>
+              <p class="text-center text-[11px] text-ink-900/50 mt-3">Démo — aucun champ n'est requis.</p>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- ============== FEED ============== -->
+      <section data-screen="feed" class="screen flex-col w-full h-full">
+        <!-- top bar -->
+        <header class="px-5 pt-3 pb-2 flex items-center justify-between bg-paper/90 backdrop-blur sticky top-0 z-20">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-xl bg-ink-950 text-paper flex items-center justify-center serif text-lg">d</div>
+            <span class="serif text-2xl">dad.</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button data-go="search" class="w-9 h-9 rounded-full bg-ink-100 flex items-center justify-center"><i data-lucide="search" class="w-4 h-4"></i></button>
+            <button data-go="messages" class="w-9 h-9 rounded-full bg-ink-100 flex items-center justify-center relative">
+              <i data-lucide="send" class="w-4 h-4"></i>
+              <span class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-coral-500 border-2 border-paper"></span>
+            </button>
+          </div>
+        </header>
+
+        <!-- feed segment -->
+        <div class="px-5 pt-1 pb-3 flex items-center gap-5 text-sm">
+          <button class="font-semibold relative pb-1.5">Pour toi <span class="absolute left-0 right-0 -bottom-0.5 h-0.5 bg-ink-950 rounded-full"></span></button>
+          <button class="text-ink-900/50 pb-1.5">Abonnements</button>
+          <button class="text-ink-900/50 pb-1.5">Proches</button>
+          <div class="ml-auto"><i data-lucide="sliders-horizontal" class="w-4 h-4 text-ink-900/60"></i></div>
+        </div>
+
+        <!-- highlights / stories -->
+        <div class="px-5 pb-3 flex gap-3 overflow-x-auto no-scrollbar">
+          <div class="flex flex-col items-center gap-1 shrink-0">
+            <div class="w-14 h-14 rounded-2xl bg-ink-100 flex items-center justify-center border border-dashed border-ink-200">
+              <i data-lucide="plus" class="w-5 h-5 text-ink-900/60"></i>
+            </div>
+            <span class="text-[10px] text-ink-900/60">Ton mot</span>
+          </div>
+          <!-- friend chips -->
+          <!-- repeated -->
+          <template id="storyT">
+            <div class="flex flex-col items-center gap-1 shrink-0">
+              <div class="w-14 h-14 rounded-2xl ring-coral overflow-hidden">
+                <div class="w-full h-full"></div>
+              </div>
+              <span class="text-[10px] text-ink-900/70"></span>
+            </div>
+          </template>
+          <div id="stories" class="flex gap-3"></div>
+        </div>
+
+        <!-- POSTS scroll -->
+        <div class="flex-1 overflow-y-auto no-scrollbar pb-28">
+          <div class="px-4 space-y-4" id="feedPosts"></div>
+        </div>
+      </section>
+
+      <!-- ============== SEARCH / EXPLORE ============== -->
+      <section data-screen="search" class="screen flex-col w-full h-full">
+        <header class="px-5 pt-3 pb-2 sticky top-0 bg-paper/90 backdrop-blur z-20">
+          <div class="flex items-center gap-2">
+            <div class="flex-1 h-11 rounded-2xl bg-ink-100 flex items-center px-3 gap-2">
+              <i data-lucide="search" class="w-4 h-4 text-ink-900/50"></i>
+              <input class="flex-1 bg-transparent outline-none text-sm" placeholder="Rechercher des idées, des gens..." />
+              <i data-lucide="mic" class="w-4 h-4 text-ink-900/50"></i>
+            </div>
+            <button data-go="feed" class="text-sm font-medium text-ink-900/70">Annuler</button>
+          </div>
+          <div class="flex gap-2 mt-3 overflow-x-auto no-scrollbar text-xs">
+            <button class="px-3 h-7 rounded-full bg-ink-950 text-paper">Tout</button>
+            <button class="px-3 h-7 rounded-full bg-ink-100">Notes</button>
+            <button class="px-3 h-7 rounded-full bg-ink-100">Photos</button>
+            <button class="px-3 h-7 rounded-full bg-ink-100">Personnes</button>
+            <button class="px-3 h-7 rounded-full bg-ink-100">Sujets</button>
+          </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto no-scrollbar pb-28">
+          <!-- trending -->
+          <div class="px-5 pt-3">
+            <div class="flex items-center justify-between mb-2">
+              <h3 class="serif text-2xl">Ce qui circule</h3>
+              <span class="text-xs text-ink-900/50">aujourd'hui</span>
+            </div>
+            <div class="space-y-2">
+              <div class="p-3 rounded-2xl bg-paper border border-ink-100 flex items-center justify-between">
+                <div>
+                  <div class="text-[11px] text-ink-900/50">Sujet · Tech</div>
+                  <div class="font-semibold text-sm">#NouveauWebGPU</div>
+                  <div class="text-xs text-ink-900/60">2 318 notes</div>
+                </div>
+                <i data-lucide="trending-up" class="w-5 h-5 text-coral-500"></i>
+              </div>
+              <div class="p-3 rounded-2xl bg-paper border border-ink-100 flex items-center justify-between">
+                <div>
+                  <div class="text-[11px] text-ink-900/50">Sujet · Lecture</div>
+                  <div class="font-semibold text-sm">#CarnetDuMois</div>
+                  <div class="text-xs text-ink-900/60">1 042 notes</div>
+                </div>
+                <i data-lucide="book-open" class="w-5 h-5 text-ink-900/60"></i>
+              </div>
+              <div class="p-3 rounded-2xl bg-paper border border-ink-100 flex items-center justify-between">
+                <div>
+                  <div class="text-[11px] text-ink-900/50">Sujet · Cinéma</div>
+                  <div class="font-semibold text-sm">#FilmsLents</div>
+                  <div class="text-xs text-ink-900/60">812 notes</div>
+                </div>
+                <i data-lucide="film" class="w-5 h-5 text-ink-900/60"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- explore grid -->
+          <div class="px-5 pt-5">
+            <h3 class="serif text-2xl mb-2">À découvrir</h3>
+            <div class="grid grid-cols-3 gap-1.5" id="exploreGrid"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============== COMPOSE ============== -->
+      <section data-screen="compose" class="screen flex-col w-full h-full">
+        <header class="px-5 pt-3 pb-3 flex items-center justify-between border-b border-ink-100">
+          <button data-go="feed" class="text-sm text-ink-900/70">Annuler</button>
+          <div class="serif text-lg">nouvelle note</div>
+          <button data-go="feed" class="px-4 h-9 rounded-full bg-ink-950 text-paper text-xs font-semibold">Publier</button>
+        </header>
+        <div class="flex-1 px-5 pt-4 flex flex-col">
+          <div class="flex items-start gap-3">
+            <div class="w-10 h-10 rounded-2xl bg-coral-500 text-paper flex items-center justify-center serif">A</div>
+            <div class="flex-1">
+              <div class="text-sm font-semibold">Ada L. <span class="text-ink-900/40 font-normal">· public</span></div>
+              <textarea rows="6" class="w-full mt-1 bg-transparent outline-none serif text-2xl leading-snug placeholder:text-ink-900/40" placeholder="Qu'est‑ce qui te traverse ?"></textarea>
+            </div>
+          </div>
+
+          <!-- attachments preview -->
+          <div class="mt-3 flex gap-2 overflow-x-auto no-scrollbar">
+            <div class="w-24 h-32 rounded-2xl bg-gradient-to-br from-coral-400 to-coral-600 relative">
+              <button class="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-ink-950/60 text-paper flex items-center justify-center"><i data-lucide="x" class="w-3 h-3"></i></button>
+            </div>
+            <div class="w-24 h-32 rounded-2xl bg-gradient-to-br from-ink-200 to-ink-100 relative">
+              <button class="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-ink-950/60 text-paper flex items-center justify-center"><i data-lucide="x" class="w-3 h-3"></i></button>
+            </div>
+            <button class="w-24 h-32 rounded-2xl bg-ink-100 flex flex-col items-center justify-center gap-1 text-xs text-ink-900/60">
+              <i data-lucide="plus" class="w-5 h-5"></i> Ajouter
+            </button>
+          </div>
+
+          <!-- tags -->
+          <div class="mt-4 flex flex-wrap gap-2">
+            <span class="px-3 h-7 inline-flex items-center rounded-full bg-ink-100 text-xs">#carnetdumois</span>
+            <span class="px-3 h-7 inline-flex items-center rounded-full bg-ink-100 text-xs">#lecture</span>
+            <button class="px-3 h-7 inline-flex items-center gap-1 rounded-full border border-dashed border-ink-200 text-xs text-ink-900/60"><i data-lucide="plus" class="w-3 h-3"></i>tag</button>
+          </div>
+
+          <!-- spacer -->
+          <div class="flex-1"></div>
+
+          <!-- toolbar -->
+          <div class="mb-6 mt-3 p-2 rounded-2xl bg-ink-100/70 flex items-center justify-between">
+            <div class="flex items-center gap-1">
+              <button class="w-9 h-9 rounded-xl hover:bg-paper flex items-center justify-center"><i data-lucide="image" class="w-4 h-4"></i></button>
+              <button class="w-9 h-9 rounded-xl hover:bg-paper flex items-center justify-center"><i data-lucide="camera" class="w-4 h-4"></i></button>
+              <button class="w-9 h-9 rounded-xl hover:bg-paper flex items-center justify-center"><i data-lucide="music-2" class="w-4 h-4"></i></button>
+              <button class="w-9 h-9 rounded-xl hover:bg-paper flex items-center justify-center"><i data-lucide="map-pin" class="w-4 h-4"></i></button>
+              <button class="w-9 h-9 rounded-xl hover:bg-paper flex items-center justify-center"><i data-lucide="smile" class="w-4 h-4"></i></button>
+            </div>
+            <div class="text-xs text-ink-900/50 pr-2">220</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============== NOTIFS ============== -->
+      <section data-screen="notifs" class="screen flex-col w-full h-full">
+        <header class="px-5 pt-3 pb-3 flex items-center justify-between sticky top-0 bg-paper/90 backdrop-blur z-20">
+          <span class="serif text-3xl">Activité</span>
+          <button class="w-9 h-9 rounded-full bg-ink-100 flex items-center justify-center"><i data-lucide="check-check" class="w-4 h-4"></i></button>
+        </header>
+        <div class="px-5 pb-2 flex gap-2 text-xs">
+          <button class="px-3 h-7 rounded-full bg-ink-950 text-paper">Tout</button>
+          <button class="px-3 h-7 rounded-full bg-ink-100">Mentions</button>
+          <button class="px-3 h-7 rounded-full bg-ink-100">Réponses</button>
+          <button class="px-3 h-7 rounded-full bg-ink-100">Abonnés</button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto no-scrollbar pb-28">
+          <div class="px-2">
+            <div class="text-[11px] uppercase tracking-widest text-ink-900/50 px-3 py-2">Aujourd'hui</div>
+            <div id="notifsToday" class="space-y-1"></div>
+            <div class="text-[11px] uppercase tracking-widest text-ink-900/50 px-3 py-2 mt-2">Cette semaine</div>
+            <div id="notifsWeek" class="space-y-1"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============== MESSAGES ============== -->
+      <section data-screen="messages" class="screen flex-col w-full h-full">
+        <header class="px-5 pt-3 pb-2 sticky top-0 bg-paper/90 backdrop-blur z-20">
+          <div class="flex items-center justify-between">
+            <span class="serif text-3xl">Messages</span>
+            <button class="w-9 h-9 rounded-full bg-ink-950 text-paper flex items-center justify-center"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+          </div>
+          <div class="mt-3 h-10 rounded-2xl bg-ink-100 flex items-center px-3 gap-2">
+            <i data-lucide="search" class="w-4 h-4 text-ink-900/50"></i>
+            <input class="flex-1 bg-transparent outline-none text-sm" placeholder="Rechercher une conversation" />
+          </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto no-scrollbar pb-28">
+          <div id="threads" class="px-2 mt-1"></div>
+        </div>
+      </section>
+
+      <!-- ============== THREAD ============== -->
+      <section data-screen="thread" class="screen flex-col w-full h-full">
+        <header class="px-3 pt-3 pb-3 flex items-center gap-2 border-b border-ink-100 sticky top-0 bg-paper z-20">
+          <button data-go="messages" class="w-9 h-9 rounded-full hover:bg-ink-100 flex items-center justify-center"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
+          <div class="w-9 h-9 rounded-full bg-coral-500 text-paper flex items-center justify-center serif">M</div>
+          <div class="flex-1">
+            <div class="text-sm font-semibold">Margaux</div>
+            <div class="text-[11px] text-moss-500">en ligne</div>
+          </div>
+          <button class="w-9 h-9 rounded-full hover:bg-ink-100 flex items-center justify-center"><i data-lucide="phone" class="w-4 h-4"></i></button>
+          <button class="w-9 h-9 rounded-full hover:bg-ink-100 flex items-center justify-center"><i data-lucide="more-horizontal" class="w-4 h-4"></i></button>
+        </header>
+        <div class="flex-1 overflow-y-auto no-scrollbar px-4 py-3 space-y-2">
+          <div class="text-center text-[10px] uppercase tracking-widest text-ink-900/40">Hier · 21:14</div>
+          <div class="max-w-[75%] bg-ink-100 rounded-2xl rounded-bl-md px-3 py-2 text-sm">Tu as vu la nouvelle police ?</div>
+          <div class="max-w-[75%] bg-ink-100 rounded-2xl rounded-bl-md px-3 py-2 text-sm">Je crois que ça rend très bien sur les titres.</div>
+          <div class="self-end ml-auto max-w-[75%] bg-ink-950 text-paper rounded-2xl rounded-br-md px-3 py-2 text-sm">Oui, je trouve aussi. Très carnet.</div>
+          <div class="text-center text-[10px] uppercase tracking-widest text-ink-900/40 pt-2">Aujourd'hui · 09:02</div>
+          <div class="max-w-[75%] bg-ink-100 rounded-2xl rounded-bl-md px-3 py-2 text-sm">On se voit ce soir ?</div>
+          <div class="self-end ml-auto max-w-[75%] bg-ink-950 text-paper rounded-2xl rounded-br-md px-3 py-2 text-sm">Avec plaisir. 19h ?</div>
+        </div>
+        <div class="p-3 border-t border-ink-100 flex items-center gap-2">
+          <button class="w-10 h-10 rounded-full bg-ink-100 flex items-center justify-center"><i data-lucide="plus" class="w-4 h-4"></i></button>
+          <div class="flex-1 h-10 rounded-full bg-ink-100 flex items-center px-3">
+            <input class="flex-1 bg-transparent outline-none text-sm" placeholder="Écrire un message"/>
+            <i data-lucide="smile" class="w-4 h-4 text-ink-900/50"></i>
+          </div>
+          <button class="w-10 h-10 rounded-full bg-coral-500 text-paper flex items-center justify-center"><i data-lucide="send" class="w-4 h-4"></i></button>
+        </div>
+      </section>
+
+      <!-- ============== PROFILE ============== -->
+      <section data-screen="profile" class="screen flex-col w-full h-full">
+        <div class="relative">
+          <div class="h-32 bg-gradient-to-br from-coral-400 via-coral-500 to-ink-950"></div>
+          <header class="absolute top-3 inset-x-0 px-4 flex items-center justify-between">
+            <button data-go="feed" class="w-9 h-9 rounded-full bg-paper/90 backdrop-blur flex items-center justify-center"><i data-lucide="arrow-left" class="w-4 h-4"></i></button>
+            <button data-go="settings" class="w-9 h-9 rounded-full bg-paper/90 backdrop-blur flex items-center justify-center"><i data-lucide="settings" class="w-4 h-4"></i></button>
+          </header>
+          <div class="absolute -bottom-10 left-5">
+            <div class="w-24 h-24 rounded-3xl bg-paper p-1.5">
+              <div class="w-full h-full rounded-2xl bg-ink-950 text-paper flex items-center justify-center serif text-3xl">A</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="px-5 pt-12 pb-4">
+          <div class="flex items-start justify-between">
+            <div>
+              <h2 class="serif text-3xl leading-tight">Ada Lovelace</h2>
+              <div class="text-sm text-ink-900/60">@ada · Paris</div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button class="w-9 h-9 rounded-full bg-ink-100 flex items-center justify-center"><i data-lucide="share-2" class="w-4 h-4"></i></button>
+              <button class="px-4 h-9 rounded-full bg-ink-950 text-paper text-xs font-semibold">Modifier</button>
+            </div>
+          </div>
+          <p class="text-sm mt-3 text-ink-900/80">Écrit des notes, lit des cartes, dessine des machines. <span class="text-coral-600">#carnetdumois</span></p>
+          <div class="flex gap-5 text-sm mt-4">
+            <div><span class="font-semibold">182</span> <span class="text-ink-900/60">notes</span></div>
+            <div><span class="font-semibold">1 204</span> <span class="text-ink-900/60">abonnés</span></div>
+            <div><span class="font-semibold">312</span> <span class="text-ink-900/60">suivis</span></div>
+          </div>
+        </div>
+
+        <!-- segmented -->
+        <div class="px-5 flex items-center gap-1 border-b border-ink-100">
+          <button class="px-3 py-3 text-sm font-semibold border-b-2 border-ink-950">Notes</button>
+          <button class="px-3 py-3 text-sm text-ink-900/50">Images</button>
+          <button class="px-3 py-3 text-sm text-ink-900/50">Marqués</button>
+          <button class="px-3 py-3 text-sm text-ink-900/50">Aimés</button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto no-scrollbar pb-28">
+          <div id="profilePosts" class="px-4 py-3 space-y-3"></div>
+        </div>
+      </section>
+
+      <!-- ============== POST DETAIL ============== -->
+      <section data-screen="post" class="screen flex-col w-full h-full">
+        <header class="px-3 pt-3 pb-2 flex items-center gap-2 border-b border-ink-100 sticky top-0 bg-paper z-20">
+          <button data-go="feed" class="w-9 h-9 rounded-full hover:bg-ink-100 flex items-center justify-center"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
+          <div class="serif text-lg">note</div>
+          <div class="ml-auto"><button class="w-9 h-9 rounded-full hover:bg-ink-100 flex items-center justify-center"><i data-lucide="more-horizontal" class="w-4 h-4"></i></button></div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto no-scrollbar pb-28">
+          <article class="px-5 pt-4">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-2xl bg-coral-500 text-paper flex items-center justify-center serif">M</div>
+              <div class="flex-1">
+                <div class="text-sm font-semibold">Margaux <span class="text-ink-900/40 font-normal">@mgx · 2h</span></div>
+                <div class="text-[11px] text-ink-900/50">Paris · Belleville</div>
+              </div>
+              <button class="px-3 h-8 rounded-full border border-ink-200 text-xs font-semibold">Suivre</button>
+            </div>
+
+            <p class="serif text-2xl leading-snug mt-4">Hier soir, le ciel était <em>parfait</em> — la couleur exacte d'un vieux papier journal.</p>
+            <p class="text-sm text-ink-900/80 mt-3">Je crois que c'est ce qui m'a poussée à reprendre l'aquarelle. Quelques essais ce matin :</p>
+
+            <div class="mt-4 grid grid-cols-2 gap-1.5">
+              <div class="aspect-square rounded-2xl bg-gradient-to-br from-coral-400 to-coral-600"></div>
+              <div class="aspect-square rounded-2xl bg-gradient-to-br from-ink-200 to-ink-100"></div>
+              <div class="aspect-square rounded-2xl bg-gradient-to-br from-moss-500 to-ink-950"></div>
+              <div class="aspect-square rounded-2xl bg-gradient-to-br from-ink-100 to-coral-400"></div>
+            </div>
+
+            <div class="flex items-center justify-between mt-4 text-sm text-ink-900/60">
+              <div class="flex items-center gap-4">
+                <button class="flex items-center gap-1.5"><i data-lucide="heart" class="w-4 h-4"></i>248</button>
+                <button class="flex items-center gap-1.5"><i data-lucide="message-circle" class="w-4 h-4"></i>32</button>
+                <button class="flex items-center gap-1.5"><i data-lucide="repeat-2" class="w-4 h-4"></i>14</button>
+              </div>
+              <button><i data-lucide="bookmark" class="w-4 h-4"></i></button>
+            </div>
+          </article>
+
+          <div class="h-px bg-ink-100 my-4 mx-5"></div>
+
+          <!-- comments -->
+          <div class="px-5 space-y-4">
+            <div class="flex items-start gap-3">
+              <div class="w-9 h-9 rounded-xl bg-ink-950 text-paper flex items-center justify-center serif">A</div>
+              <div class="flex-1">
+                <div class="bg-ink-100/70 rounded-2xl rounded-tl-md px-3 py-2">
+                  <div class="text-xs font-semibold">Ada <span class="text-ink-900/40 font-normal">· 1h</span></div>
+                  <div class="text-sm">Les deux du bas sont magnifiques.</div>
+                </div>
+                <div class="flex items-center gap-3 mt-1 ml-2 text-[11px] text-ink-900/50">
+                  <button>Répondre</button><button>J'aime</button><span>· 12</span>
+                </div>
+              </div>
+            </div>
+            <div class="flex items-start gap-3">
+              <div class="w-9 h-9 rounded-xl bg-moss-500 text-paper flex items-center justify-center serif">J</div>
+              <div class="flex-1">
+                <div class="bg-ink-100/70 rounded-2xl rounded-tl-md px-3 py-2">
+                  <div class="text-xs font-semibold">Jules <span class="text-ink-900/40 font-normal">· 45min</span></div>
+                  <div class="text-sm">Quel papier tu utilises ?</div>
+                </div>
+                <div class="flex items-center gap-3 mt-1 ml-2 text-[11px] text-ink-900/50">
+                  <button>Répondre</button><button>J'aime</button><span>· 3</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- reply bar -->
+        <div class="p-3 border-t border-ink-100 flex items-center gap-2">
+          <div class="w-9 h-9 rounded-xl bg-ink-950 text-paper flex items-center justify-center serif">A</div>
+          <div class="flex-1 h-10 rounded-full bg-ink-100 flex items-center px-3">
+            <input class="flex-1 bg-transparent outline-none text-sm" placeholder="Répondre à Margaux..."/>
+          </div>
+          <button class="w-10 h-10 rounded-full bg-coral-500 text-paper flex items-center justify-center"><i data-lucide="send" class="w-4 h-4"></i></button>
+        </div>
+      </section>
+
+      <!-- ============== SETTINGS ============== -->
+      <section data-screen="settings" class="screen flex-col w-full h-full">
+        <header class="px-3 pt-3 pb-2 flex items-center gap-2 border-b border-ink-100 sticky top-0 bg-paper z-20">
+          <button data-go="profile" class="w-9 h-9 rounded-full hover:bg-ink-100 flex items-center justify-center"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
+          <div class="serif text-2xl">Réglages</div>
+        </header>
+        <div class="flex-1 overflow-y-auto no-scrollbar pb-28 px-4 pt-3 space-y-5">
+
+          <div class="flex items-center gap-3 p-3 rounded-2xl bg-ink-100/70">
+            <div class="w-12 h-12 rounded-2xl bg-ink-950 text-paper flex items-center justify-center serif text-xl">A</div>
+            <div class="flex-1">
+              <div class="font-semibold text-sm">Ada Lovelace</div>
+              <div class="text-xs text-ink-900/60">@ada · gérer le compte</div>
+            </div>
+            <i data-lucide="chevron-right" class="w-4 h-4 text-ink-900/40"></i>
+          </div>
+
+          <div>
+            <div class="text-[11px] uppercase tracking-widest text-ink-900/50 px-2 mb-2">Préférences</div>
+            <div class="rounded-2xl border border-ink-100 overflow-hidden divide-y divide-ink-100">
+              <div class="px-4 py-3 flex items-center gap-3"><i data-lucide="moon" class="w-4 h-4"></i><div class="flex-1 text-sm">Apparence</div><span class="text-xs text-ink-900/50">Auto</span><i data-lucide="chevron-right" class="w-4 h-4 text-ink-900/40"></i></div>
+              <div class="px-4 py-3 flex items-center gap-3"><i data-lucide="bell" class="w-4 h-4"></i><div class="flex-1 text-sm">Notifications</div><i data-lucide="chevron-right" class="w-4 h-4 text-ink-900/40"></i></div>
+              <div class="px-4 py-3 flex items-center gap-3"><i data-lucide="languages" class="w-4 h-4"></i><div class="flex-1 text-sm">Langue</div><span class="text-xs text-ink-900/50">FR</span><i data-lucide="chevron-right" class="w-4 h-4 text-ink-900/40"></i></div>
+            </div>
+          </div>
+
+          <div>
+            <div class="text-[11px] uppercase tracking-widest text-ink-900/50 px-2 mb-2">Confidentialité</div>
+            <div class="rounded-2xl border border-ink-100 overflow-hidden divide-y divide-ink-100">
+              <div class="px-4 py-3 flex items-center gap-3"><i data-lucide="lock" class="w-4 h-4"></i><div class="flex-1 text-sm">Compte privé</div>
+                <button class="w-10 h-6 rounded-full bg-ink-200 relative"><span class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-paper shadow"></span></button>
+              </div>
+              <div class="px-4 py-3 flex items-center gap-3"><i data-lucide="eye-off" class="w-4 h-4"></i><div class="flex-1 text-sm">Statut "vu"</div>
+                <button class="w-10 h-6 rounded-full bg-coral-500 relative"><span class="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-paper shadow"></span></button>
+              </div>
+              <div class="px-4 py-3 flex items-center gap-3"><i data-lucide="shield" class="w-4 h-4"></i><div class="flex-1 text-sm">Sécurité</div><i data-lucide="chevron-right" class="w-4 h-4 text-ink-900/40"></i></div>
+            </div>
+          </div>
+
+          <div>
+            <div class="text-[11px] uppercase tracking-widest text-ink-900/50 px-2 mb-2">Compte</div>
+            <div class="rounded-2xl border border-ink-100 overflow-hidden divide-y divide-ink-100">
+              <div class="px-4 py-3 flex items-center gap-3"><i data-lucide="download" class="w-4 h-4"></i><div class="flex-1 text-sm">Exporter mes données</div><i data-lucide="chevron-right" class="w-4 h-4 text-ink-900/40"></i></div>
+              <button data-go="onboarding" class="w-full text-left px-4 py-3 flex items-center gap-3 text-coral-600"><i data-lucide="log-out" class="w-4 h-4"></i><div class="flex-1 text-sm font-semibold">Se déconnecter</div></button>
+            </div>
+          </div>
+
+          <p class="text-center text-[11px] text-ink-900/40 pt-4">dad. v0.1 — maquette de démonstration</p>
+        </div>
+      </section>
+
+      <!-- ============== BOTTOM NAV ============== -->
+      <nav id="bottomNav" class="absolute bottom-0 inset-x-0 z-30">
+        <div class="mx-3 mb-3 rounded-3xl bg-ink-950 text-paper/80 shadow-soft px-2 py-2 flex items-center justify-between">
+          <button data-go="feed" class="nav-btn flex-1 h-12 rounded-2xl flex flex-col items-center justify-center gap-0.5">
+            <i data-lucide="home" class="w-5 h-5"></i><span class="text-[10px]">Accueil</span>
+          </button>
+          <button data-go="search" class="nav-btn flex-1 h-12 rounded-2xl flex flex-col items-center justify-center gap-0.5">
+            <i data-lucide="compass" class="w-5 h-5"></i><span class="text-[10px]">Explorer</span>
+          </button>
+          <button data-go="compose" class="flex-1 flex items-center justify-center">
+            <span class="w-12 h-12 rounded-2xl bg-coral-500 text-paper flex items-center justify-center"><i data-lucide="plus" class="w-5 h-5"></i></span>
+          </button>
+          <button data-go="notifs" class="nav-btn flex-1 h-12 rounded-2xl flex flex-col items-center justify-center gap-0.5 relative">
+            <i data-lucide="bell" class="w-5 h-5"></i><span class="text-[10px]">Activité</span>
+            <span class="absolute top-1 right-4 w-2 h-2 rounded-full bg-coral-500"></span>
+          </button>
+          <button data-go="profile" class="nav-btn flex-1 h-12 rounded-2xl flex flex-col items-center justify-center gap-0.5">
+            <i data-lucide="user" class="w-5 h-5"></i><span class="text-[10px]">Profil</span>
+          </button>
+        </div>
+      </nav>
+
+      <!-- home indicator -->
+      <div class="absolute bottom-1 left-1/2 -translate-x-1/2 w-32 h-1 rounded-full bg-ink-950/30 desktop-only pointer-events-none"></div>
+
+    </div>
+  </div>
+
+  <!-- Right side: notes (desktop) -->
+  <aside class="desktop-only w-full max-w-xs pt-8">
+    <div class="rounded-3xl bg-paper border border-ink-100 p-5">
+      <div class="text-[11px] uppercase tracking-widest text-ink-900/50">Système</div>
+      <div class="serif text-2xl mt-1">Palette &amp; ton</div>
+      <div class="mt-4 grid grid-cols-5 gap-2">
+        <div class="aspect-square rounded-xl bg-paper border border-ink-100" title="paper"></div>
+        <div class="aspect-square rounded-xl bg-ink-100" title="ink-100"></div>
+        <div class="aspect-square rounded-xl bg-ink-950" title="ink-950"></div>
+        <div class="aspect-square rounded-xl bg-coral-500" title="coral-500"></div>
+        <div class="aspect-square rounded-xl bg-moss-500" title="moss-500"></div>
+      </div>
+      <ul class="text-xs text-ink-900/70 mt-4 space-y-1 list-disc list-inside">
+        <li>Typo : <em>Instrument Serif</em> + Inter</li>
+        <li>Coins doux (2xl–3xl)</li>
+        <li>Nav flottante sombre</li>
+        <li>Accent corail parcimonieux</li>
+      </ul>
+    </div>
+
+    <div class="rounded-3xl bg-paper border border-ink-100 p-5 mt-4">
+      <div class="serif text-xl">Concept</div>
+      <p class="text-xs text-ink-900/70 mt-2 leading-relaxed">
+        Format <strong>"note"</strong> au lieu de "post" — invite à un ton plus posé.
+        Les images et le texte cohabitent sans hiérarchie forte.
+        L'identité visuelle évoque un carnet papier moderne.
+      </p>
+    </div>
+  </aside>
+
+</div>
+
+<script>
+  // ---- demo data ----
+  const stories = [
+    {n:'Margaux', c:'from-coral-400 to-coral-600'},
+    {n:'Jules',   c:'from-moss-500 to-ink-950'},
+    {n:'Inès',    c:'from-ink-200 to-coral-400'},
+    {n:'Sami',    c:'from-coral-600 to-ink-950'},
+    {n:'Léa',     c:'from-ink-100 to-moss-500'},
+    {n:'Tom',     c:'from-coral-400 to-ink-950'},
+  ];
+
+  const posts = [
+    {
+      kind:'text', user:'Margaux', handle:'mgx', av:'M', avBg:'bg-coral-500', time:'2h',
+      text:`Hier soir, le ciel était <em>parfait</em> — la couleur exacte d'un vieux papier journal.`,
+      likes:248, comments:32, reposts:14
+    },
+    {
+      kind:'gallery', user:'Jules', handle:'jules', av:'J', avBg:'bg-moss-500', time:'4h',
+      text:'Petits essais d\'aquarelle ce matin. Le bleu m\'échappe encore.',
+      images:[
+        'from-coral-400 to-coral-600',
+        'from-ink-200 to-ink-100',
+        'from-moss-500 to-ink-950',
+      ],
+      likes:512, comments:84, reposts:21
+    },
+    {
+      kind:'quote', user:'Ada', handle:'ada', av:'A', avBg:'bg-ink-950', time:'6h',
+      text:`« On ne pense pas en marchant — on pense parce qu'on a marché. »`,
+      cite:'Frédéric Gros',
+      likes:131, comments:9, reposts:18
+    },
+    {
+      kind:'image', user:'Inès', handle:'ines', av:'I', avBg:'bg-coral-400', time:'9h',
+      text:'Atelier ouvert tout le week‑end — passez si vous êtes dans le coin.',
+      image:'from-ink-100 to-coral-400',
+      likes:84, comments:11, reposts:3
+    },
+    {
+      kind:'text', user:'Sami', handle:'sami', av:'S', avBg:'bg-ink-950', time:'12h',
+      text:'Question naïve du jour : pourquoi le bon design semble toujours <em>évident</em> seulement après ?',
+      likes:329, comments:47, reposts:22
+    },
+  ];
+
+  const notifsToday = [
+    { ic:'heart',         t:'<b>Margaux</b> a aimé ta note',                 sub:'« Hier soir, le ciel… »', time:'2h' },
+    { ic:'user-plus',     t:'<b>Jules</b> et 2 autres te suivent',           sub:'voir tous',                time:'3h' },
+    { ic:'message-circle',t:'<b>Inès</b> a répondu à ta note',                sub:'« joli papier ! »',        time:'5h' },
+    { ic:'at-sign',       t:'<b>Sami</b> t\'a mentionnée',                   sub:'dans un fil',              time:'8h' },
+  ];
+  const notifsWeek = [
+    { ic:'repeat-2',      t:'<b>Léa</b> a repartagé ta note',                sub:'« Question naïve… »',      time:'mar' },
+    { ic:'bookmark',      t:'<b>Tom</b> a marqué ta note',                   sub:'ajout aux favoris',        time:'lun' },
+    { ic:'sparkles',      t:'Ton carnet a passé les <b>1 000 abonnés</b>',   sub:'félicitations',            time:'dim' },
+  ];
+
+  const threads = [
+    { n:'Margaux',  av:'M', bg:'bg-coral-500', last:'On se voit ce soir ? 19h ?',         time:'09:02', unread:2, on:true  },
+    { n:'Jules',    av:'J', bg:'bg-moss-500',  last:'Je t\'envoie le fichier demain.',    time:'hier',  unread:0, on:false },
+    { n:'Inès',     av:'I', bg:'bg-coral-400', last:'Vu pour le papier 🙌',                time:'hier',  unread:0, on:false },
+    { n:'Atelier',  av:'A', bg:'bg-ink-950',   last:'Sami : "j\'arrive un peu en retard"', time:'lun',   unread:5, on:false },
+    { n:'Tom',      av:'T', bg:'bg-ink-200 text-ink-950', last:'Merci !', time:'dim', unread:0, on:false },
+  ];
+
+  const exploreCells = [
+    'from-coral-400 to-coral-600',
+    'from-ink-200 to-ink-100',
+    'from-moss-500 to-ink-950',
+    'from-ink-100 to-coral-400',
+    'from-coral-500 to-ink-950',
+    'from-ink-100 to-moss-500',
+    'from-coral-400 to-ink-200',
+    'from-ink-200 to-coral-500',
+    'from-moss-500 to-coral-400',
+  ];
+
+  // ---- renderers ----
+  function renderStories() {
+    const root = document.getElementById('stories');
+    root.innerHTML = stories.map(s => `
+      <div class="flex flex-col items-center gap-1 shrink-0">
+        <div class="w-14 h-14 rounded-2xl ring-coral overflow-hidden">
+          <div class="w-full h-full bg-gradient-to-br ${s.c}"></div>
+        </div>
+        <span class="text-[10px] text-ink-900/70">${s.n}</span>
+      </div>`).join('');
+  }
+
+  function postShell(p, inner) {
+    return `
+      <article class="bg-paper border border-ink-100 rounded-3xl p-4 cursor-pointer hover:border-ink-200 transition" data-go="post">
+        <header class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl ${p.avBg} text-paper flex items-center justify-center serif">${p.av}</div>
+          <div class="flex-1 min-w-0">
+            <div class="text-sm font-semibold truncate">${p.user} <span class="text-ink-900/40 font-normal">@${p.handle} · ${p.time}</span></div>
+            <div class="text-[11px] text-ink-900/50">public</div>
+          </div>
+          <button onclick="event.stopPropagation()" class="w-8 h-8 rounded-full hover:bg-ink-100 flex items-center justify-center"><i data-lucide="more-horizontal" class="w-4 h-4"></i></button>
+        </header>
+        ${inner}
+        <footer class="flex items-center justify-between mt-3 text-sm text-ink-900/60" onclick="event.stopPropagation()">
+          <div class="flex items-center gap-4">
+            <button class="flex items-center gap-1.5"><i data-lucide="heart" class="w-4 h-4"></i>${p.likes}</button>
+            <button class="flex items-center gap-1.5"><i data-lucide="message-circle" class="w-4 h-4"></i>${p.comments}</button>
+            <button class="flex items-center gap-1.5"><i data-lucide="repeat-2" class="w-4 h-4"></i>${p.reposts}</button>
+          </div>
+          <button><i data-lucide="bookmark" class="w-4 h-4"></i></button>
+        </footer>
+      </article>`;
+  }
+
+  function renderPost(p) {
+    if (p.kind === 'text') {
+      return postShell(p, `<p class="serif text-xl leading-snug mt-2">${p.text}</p>`);
+    }
+    if (p.kind === 'image') {
+      return postShell(p,
+        `<p class="text-sm mt-2 text-ink-900/85">${p.text}</p>
+         <div class="mt-3 aspect-[4/3] rounded-2xl bg-gradient-to-br ${p.image}"></div>`);
+    }
+    if (p.kind === 'gallery') {
+      const imgs = p.images.map(c => `<div class="aspect-square rounded-xl bg-gradient-to-br ${c}"></div>`).join('');
+      return postShell(p,
+        `<p class="text-sm mt-2 text-ink-900/85">${p.text}</p>
+         <div class="mt-3 grid grid-cols-3 gap-1.5">${imgs}</div>`);
+    }
+    if (p.kind === 'quote') {
+      return postShell(p,
+        `<blockquote class="mt-3 p-4 rounded-2xl bg-ink-100/60 border-l-4 border-coral-500">
+           <p class="serif text-xl leading-snug">${p.text}</p>
+           <footer class="text-xs text-ink-900/60 mt-2">— ${p.cite}</footer>
+         </blockquote>`);
+    }
+    return '';
+  }
+
+  function renderFeed() {
+    document.getElementById('feedPosts').innerHTML = posts.map(renderPost).join('');
+    document.getElementById('profilePosts').innerHTML = posts.slice(0,3).map(renderPost).join('');
+  }
+
+  function renderNotifs() {
+    const make = arr => arr.map(n => `
+      <div class="flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-ink-100/60">
+        <div class="w-10 h-10 rounded-2xl bg-ink-100 flex items-center justify-center"><i data-lucide="${n.ic}" class="w-4 h-4 text-coral-600"></i></div>
+        <div class="flex-1 min-w-0">
+          <div class="text-sm">${n.t}</div>
+          <div class="text-[11px] text-ink-900/50 truncate">${n.sub}</div>
+        </div>
+        <div class="text-[11px] text-ink-900/40">${n.time}</div>
+      </div>`).join('');
+    document.getElementById('notifsToday').innerHTML = make(notifsToday);
+    document.getElementById('notifsWeek').innerHTML  = make(notifsWeek);
+  }
+
+  function renderThreads() {
+    document.getElementById('threads').innerHTML = threads.map(t => `
+      <button data-go="thread" class="w-full flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-ink-100/60 text-left">
+        <div class="relative">
+          <div class="w-12 h-12 rounded-2xl ${t.bg} text-paper flex items-center justify-center serif text-lg">${t.av}</div>
+          ${t.on ? '<span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-moss-500 border-2 border-paper"></span>' : ''}
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center justify-between">
+            <div class="font-semibold text-sm">${t.n}</div>
+            <div class="text-[11px] text-ink-900/40">${t.time}</div>
+          </div>
+          <div class="flex items-center justify-between gap-2">
+            <div class="text-xs text-ink-900/60 truncate">${t.last}</div>
+            ${t.unread ? `<span class="shrink-0 min-w-5 h-5 px-1.5 rounded-full bg-coral-500 text-paper text-[10px] font-bold flex items-center justify-center">${t.unread}</span>` : ''}
+          </div>
+        </div>
+      </button>`).join('');
+  }
+
+  function renderExplore() {
+    document.getElementById('exploreGrid').innerHTML = exploreCells.map((c,i) => `
+      <div data-go="post" class="aspect-square rounded-xl bg-gradient-to-br ${c} cursor-pointer relative overflow-hidden">
+        ${i===1 ? '<div class="absolute top-1.5 right-1.5"><i data-lucide="images" class="w-3 h-3 text-paper/80"></i></div>' : ''}
+        ${i===4 ? '<div class="absolute top-1.5 right-1.5"><i data-lucide="play" class="w-3 h-3 text-paper/80"></i></div>' : ''}
+      </div>`).join('');
+  }
+
+  // ---- jump buttons (desktop) ----
+  const screensList = [
+    ['onboarding','Onboarding'],['login','Login'],['signup','Inscription'],
+    ['feed','Fil'],['search','Explorer'],['compose','Composer'],
+    ['notifs','Activité'],['messages','Messages'],['thread','Conversation'],
+    ['profile','Profil'],['post','Note détail'],['settings','Réglages'],
+  ];
+  function renderJumps() {
+    const root = document.getElementById('jumpButtons');
+    if (!root) return;
+    root.innerHTML = screensList.map(([k,l]) =>
+      `<button data-go="${k}" class="h-9 rounded-xl border border-ink-200 bg-paper hover:bg-ink-100 text-left px-3">${l}</button>`
+    ).join('');
+  }
+
+  // ---- navigation ----
+  const navScreens = new Set(['feed','search','compose','notifs','profile']);
+  function go(name) {
+    document.querySelectorAll('[data-screen]').forEach(s => s.classList.toggle('active', s.dataset.screen === name));
+    // bottom nav visibility — hide on auth/thread/post-compose-detail screens to reduce clutter
+    const hideNav = ['onboarding','login','signup','thread','compose','post','settings'];
+    document.getElementById('bottomNav').style.display = hideNav.includes(name) ? 'none' : 'block';
+    // active tab styling
+    document.querySelectorAll('.nav-btn').forEach(b => {
+      const isActive = b.dataset.go === name;
+      b.classList.toggle('bg-paper/10', isActive);
+      b.classList.toggle('text-paper', isActive);
+    });
+    // reset scroll
+    document.querySelectorAll('.screen').forEach(s => s.scrollTop = 0);
+    // re-render icons
+    if (window.lucide) lucide.createIcons();
+  }
+  window.go = go;
+
+  document.addEventListener('click', (e) => {
+    const t = e.target.closest('[data-go]');
+    if (t) { go(t.dataset.go); }
+  });
+
+  // ---- init ----
+  renderStories(); renderFeed(); renderNotifs(); renderThreads(); renderExplore(); renderJumps();
+  go('onboarding');
+  if (window.lucide) lucide.createIcons();
+</script>
+</body>
+</html>

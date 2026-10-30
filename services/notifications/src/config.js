@@ -1,0 +1,13 @@
+/**
+ * @file config.js
+ * @brief Configuration centralisée du service Notifications (variables d'environnement).
+ */
+export const env = {
+  nodeEnv: process.env.NODE_ENV || 'development',
+  port: Number(process.env.PORT || 4004),
+  corsOrigins: (process.env.CORS_ORIGINS || 'http://localhost:8080')
+    .split(',').map((o) => o.trim()).filter(Boolean),
+  jwt: { accessSecret: process.env.JWT_ACCESS_SECRET || 'dev_access_secret' },
+  internalKey: process.env.INTERNAL_API_KEY || 'dev_internal_key',
+  mongoUri: process.env.MONGO_URI || 'mongodb://mongo:27017/breezy',
+};

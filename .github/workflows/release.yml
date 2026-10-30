@@ -1,0 +1,140 @@
+name: Release — build & push images (GHCR) & deploy (Azure)
+
+# - push sur main / feature/** : build + push des images sur GHCR (ghcr.io).
+#   Le déploiement Azure s'enchaîne automatiquement SI les credentials Azure sont
+#   configurés (variable AZURE_RESOURCE_GROUP + secrets AZURE_*). Sinon le job deploy
+#   est simplement sauté (CI verte). Cf. le `if` du job deploy-azure plus bas.
+# - workflow_dispatch : idem (la case `deploy` force aussi le déploiement).
+on:
+  push:
+    branches: [main, 'feature/**']
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: "Déployer sur Azure Container Apps après le push ?"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  packages: write   # publier sur GHCR avec le GITHUB_TOKEN intégré
+
+jobs:
+  # -----------------------------------------------------------
+  # Build + push des images sur GHCR (matrice)
+  # Tags : :latest  et  :sha-<commit>  (immuable, utilisé par le deploy)
+  # Images : ghcr.io/<owner>/breezy-<service>
+  # -----------------------------------------------------------
+  build-push:
+    name: Build & push — ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { service: auth,          context: services/auth }
+          - { service: users,         context: services/users }
+          - { service: posts,         context: services/posts }
+          - { service: notifications, context: services/notifications }
+          - { service: conversations, context: services/conversations }
+          - { service: frontend,      context: frontend }
+          - { service: gateway,       context: gateway }
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Login GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Métadonnées (tags + labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          # metadata-action met automatiquement le nom d'image en minuscules.
+          images: ghcr.io/${{ github.repository_owner }}/breezy-${{ matrix.service }}
+          tags: |
+            type=raw,value=latest
+            type=sha,prefix=sha-,format=long
+
+      - name: Build & push
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # NEXT_PUBLIC_API_URL n'est consommé que par le frontend (ignoré ailleurs).
+          build-args: |
+            NEXT_PUBLIC_API_URL=/api
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # -----------------------------------------------------------
+  # Déploiement Azure Container Apps
+  # S'exécute automatiquement après build-push, MAIS uniquement si l'auth Azure
+  # est configurée (variable AZURE_RESOURCE_GROUP présente). Tant qu'elle est vide,
+  # le job est sauté (pas d'échec). Prérequis : un admin du tenant fournit un
+  # service principal OIDC, puis on ajoute les secrets AZURE_CLIENT_ID /
+  # AZURE_TENANT_ID / AZURE_SUBSCRIPTION_ID + la variable AZURE_RESOURCE_GROUP.
+  # Approbation manuelle possible via Settings > Environments > production.
+  # -----------------------------------------------------------
+  deploy-azure:
+    name: Deploy → Azure Container Apps
+    needs: build-push
+    if: ${{ (github.event_name == 'push' || inputs.deploy) && vars.AZURE_RESOURCE_GROUP != '' }}
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      id-token: write   # OIDC (federated credentials)
+      contents: read
+    steps:
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Mise à jour des Container Apps (image = sha du commit)
+        uses: azure/cli@v2
+        with:
+          azcliversion: latest
+          inlineScript: |
+            set -euo pipefail
+            RG="${{ vars.AZURE_RESOURCE_GROUP }}"
+            OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+            TAG="sha-${{ github.sha }}"
+
+            # Backend + frontend : simple mise à jour d'image.
+            for svc in auth users posts notifications conversations frontend; do
+              echo "::group::Déploiement breezy-$svc"
+              az containerapp update \
+                --name "breezy-$svc" \
+                --resource-group "$RG" \
+                --image "ghcr.io/$OWNER/breezy-$svc:$TAG"
+              echo "::endgroup::"
+            done
+
+            # Gateway : image + upstreams = FQDN interne COMPLET de chaque app cible.
+            # L'ingress interne d'ACA route selon le header Host : un nom court renvoie
+            # « app does not exist » → 404. On lit donc le FQDN réel de chaque app.
+            echo "::group::Déploiement breezy-gateway"
+            fqdn() { az containerapp show -n "breezy-$1" -g "$RG" \
+                       --query properties.configuration.ingress.fqdn -o tsv; }
+            az containerapp update \
+              --name breezy-gateway \
+              --resource-group "$RG" \
+              --image "ghcr.io/$OWNER/breezy-gateway:$TAG" \
+              --set-env-vars \
+                "AUTH_UPSTREAM=$(fqdn auth)" \
+                "USERS_UPSTREAM=$(fqdn users)" \
+                "POSTS_UPSTREAM=$(fqdn posts)" \
+                "NOTIFICATIONS_UPSTREAM=$(fqdn notifications)" \
+                "CONVERSATIONS_UPSTREAM=$(fqdn conversations)" \
+                "FRONTEND_UPSTREAM=$(fqdn frontend)"
+            echo "::endgroup::"

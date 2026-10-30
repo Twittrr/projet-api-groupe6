@@ -1,0 +1,102 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* === Design system Breezy — palette "dad." (corail + papier + encre) === */
+:root {
+  /* Fonds */
+  --c-bg:  #FBFAF6;
+  --c-sf:  #F4F2EB;
+  --c-sf2: #ECEADE;
+
+  /* Bordures */
+  --c-bd:  rgba(17,17,16,0.07);
+  --c-bd2: rgba(17,17,16,0.13);
+
+  /* Texte */
+  --c-tx:  #111110;
+  --c-tx2: rgba(17,17,16,0.68);
+  --c-tx3: rgba(17,17,16,0.42);
+  --c-tx4: rgba(17,17,16,0.26);
+
+  /* Accent corail */
+  --c-ac:  #FF5C45;
+  --c-ac2: rgba(255,92,69,0.10);
+  --c-acd: #E94A35;
+
+  /* Navigation (pill sombre) */
+  --c-nav: #0A0A09;
+
+  /* États */
+  --c-ok:  #3E7C5A;
+  --c-err: #DC2626;
+
+  /* Internes */
+  --c-in:  rgba(17,17,16,0.055);
+  --c-tag: rgba(17,17,16,0.07);
+  --c-gl:  rgba(251,250,246,0.90);
+
+  /* Palette avatar (5 couleurs déterministes) */
+  --av1: #FF5C45;
+  --av2: #3E7C5A;
+  --av3: #7C3AED;
+  --av4: #B45309;
+  --av5: #0F766E;
+}
+
+[data-theme='dark'] {
+  --c-bg:  #1A1714;
+  --c-sf:  #242220;
+  --c-sf2: #2D2A26;
+
+  --c-bd:  rgba(240,237,230,0.08);
+  --c-bd2: rgba(240,237,230,0.14);
+
+  --c-tx:  #F0EDE6;
+  --c-tx2: rgba(240,237,230,0.68);
+  --c-tx3: rgba(240,237,230,0.42);
+  --c-tx4: rgba(240,237,230,0.24);
+
+  --c-ac:  #FF7A66;
+  --c-ac2: rgba(255,122,102,0.12);
+  --c-acd: #FF5C45;
+
+  --c-nav: #0D0B09;
+
+  --c-ok:  #4ADE80;
+  --c-err: #F87171;
+
+  --c-in:  rgba(240,237,230,0.07);
+  --c-tag: rgba(240,237,230,0.09);
+  --c-gl:  rgba(26,23,20,0.90);
+
+  --av1: #FF7A66;
+  --av2: #4ADE80;
+  --av3: #A78BFA;
+  --av4: #FCD34D;
+  --av5: #2DD4BF;
+}
+
+/* ---- Base ---- */
+* { box-sizing: border-box; -webkit-font-smoothing: antialiased; }
+html, body { margin: 0; padding: 0; }
+body { font-family: var(--font-inter, 'Inter', system-ui, sans-serif); background: var(--c-bg); color: var(--c-tx); }
+
+/* Classe serif utilitaire (Instrument Serif) */
+.serif { font-family: var(--font-serif, 'Instrument Serif', Georgia, serif); letter-spacing: -0.01em; }
+
+/* Transitions de thème (couleurs uniquement — évite d'animer la géométrie) */
+[data-theme] * { transition: background-color .22s, color .18s, border-color .18s, fill .18s, stroke .18s; }
+
+/* Masquer les scrollbars (mobile) */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
+
+/* Grain de papier (page onboarding) */
+.grain {
+  background-image:
+    radial-gradient(rgba(0,0,0,0.025) 1px, transparent 1px),
+    radial-gradient(rgba(0,0,0,0.02)  1px, transparent 1px);
+  background-size: 3px 3px, 7px 7px;
+  background-position: 0 0, 1px 2px;
+}

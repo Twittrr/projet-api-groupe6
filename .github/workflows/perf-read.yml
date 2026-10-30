@@ -1,0 +1,159 @@
+name: Perf — lecture des données (utilisateurs simultanés)
+
+# Mesure combien d'utilisateurs peuvent LIRE les données en même temps.
+# Tout tourne sur le runner gratuit ubuntu-latest (4 vCPU, 16 Go) :
+# aucun service externe, aucun secret, aucune limite de temps payante.
+#
+# Déclenchement : manuel (onglet Actions) ou chaque lundi à 3 h UTC.
+
+on:
+  workflow_dispatch:
+    inputs:
+      levels:
+        description: "Paliers d'utilisateurs simultanés (séparés par des virgules)"
+        default: "10,25,50,100,200,400"
+        type: string
+      duration:
+        description: "Durée de chaque palier (format k6 : 30s, 1m…)"
+        default: "45s"
+        type: string
+  schedule:
+    - cron: '0 3 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: perf-read
+  cancel-in-progress: false
+
+env:
+  PERF_BASE_URL: http://localhost:8081
+  PERF_RESULT_DIR: perf/results
+
+jobs:
+  read-load:
+    name: Charge lecture
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      # Les images Docker + les données seedées dépassent l'espace libre par défaut.
+      - name: Libérer de l'espace disque
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          docker image prune -af
+          df -h /
+
+      - name: Contexte d'exécution
+        run: |
+          {
+            echo "## ⚡ Charge lecture — contexte"
+            echo ""
+            echo "- Runner : ubuntu-latest (gratuit) — $(nproc) vCPU, $(free -g | awk '/Mem:/ {print $2}') Go RAM"
+            echo "- Date : $(date -u '+%Y-%m-%d %H:%M UTC')"
+            echo "- Commit : ${GITHUB_SHA:0:7}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Préparer .env
+        run: |
+          cp .env.example .env
+          {
+            echo "PERF_GATEWAY_PORT=8081"
+            echo "JWT_ACCESS_TTL=2h"                 # un run dure plus que les 15 min par défaut
+            echo "SEED_USER_PASSWORD=PerfLoad123!"   # mot de passe connu des comptes de test
+          } >> .env
+
+      # gateway-perf = image gateway/Dockerfile, donc config « cloud » sans rate-limit
+      # par IP : on mesure la capacité applicative, pas le limiteur anti-abus.
+      - name: Construire les images
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.perf.yml \
+            build auth users posts notifications conversations gateway-perf seeder
+
+      - name: Démarrer la stack (sans le frontend)
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.perf.yml \
+            up -d postgres mongo auth users posts notifications conversations gateway-perf
+
+      - name: Attendre le gateway
+        run: |
+          for i in $(seq 1 60); do
+            if curl -fsS "$PERF_BASE_URL/healthz" > /dev/null; then
+              echo "gateway prêt (tentative $i)"
+              exit 0
+            fi
+            sleep 3
+          done
+          docker compose -f docker-compose.yml -f docker-compose.perf.yml ps
+          docker compose -f docker-compose.yml -f docker-compose.perf.yml logs --tail=100 gateway-perf
+          echo "gateway indisponible" >&2
+          exit 1
+
+      - name: Peupler les données (~1000 utilisateurs, ~6000 posts)
+        timeout-minutes: 20
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.perf.yml \
+            --profile seed run --rm seeder
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Préparer les jetons de connexion
+        run: node perf/prepare-tokens.mjs
+        env:
+          BASE_URL: ${{ env.PERF_BASE_URL }}
+          SEED_USER_PASSWORD: PerfLoad123!
+
+      - name: Installer k6
+        run: |
+          K6_URL=$(curl -fsSL https://api.github.com/repos/grafana/k6/releases/latest \
+            | jq -r '.assets[] | select(.name | endswith("linux-amd64.tar.gz")) | .browser_download_url')
+          curl -fsSL "$K6_URL" | tar xz -C /tmp
+          sudo mv /tmp/k6-*/k6 /usr/local/bin/k6
+          k6 version
+
+      - name: Échauffement (résultats ignorés)
+        run: |
+          mkdir -p "$PERF_RESULT_DIR"
+          k6 run \
+            -e BASE_URL="$PERF_BASE_URL" -e VUS=5 -e DURATION=20s \
+            -e LEVEL=warmup -e RESULT_DIR="$PERF_RESULT_DIR" \
+            perf/k6/read-load.js
+
+      - name: Paliers de charge
+        env:
+          LEVELS: ${{ github.event.inputs.levels || '10,25,50,100,200,400' }}
+          DURATION: ${{ github.event.inputs.duration || '45s' }}
+        run: |
+          IFS=',' read -ra PALIERS <<< "$LEVELS"
+          for vus in "${PALIERS[@]}"; do
+            vus=$(echo "$vus" | tr -d ' ')
+            echo "▶ ${vus} utilisateurs simultanés pendant ${DURATION}"
+            k6 run \
+              -e BASE_URL="$PERF_BASE_URL" -e VUS="$vus" -e DURATION="$DURATION" \
+              -e LEVEL="$vus" -e RESULT_DIR="$PERF_RESULT_DIR" \
+              perf/k6/read-load.js || echo "⚠️ k6 a renvoyé un code non nul pour ${vus} VUs"
+          done
+
+      - name: Rapport (capacité + tableau par palier)
+        run: node perf/report.mjs | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Publier les résultats bruts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: perf-lecture-${{ github.run_id }}
+          path: perf/results/
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Logs des services (en cas d'échec)
+        if: failure()
+        run: docker compose -f docker-compose.yml -f docker-compose.perf.yml logs --tail=200
+
+      - name: Arrêter la stack
+        if: always()
+        run: docker compose -f docker-compose.yml -f docker-compose.perf.yml down -v

@@ -1,0 +1,47 @@
+# =============================================================
+# Breezy — Overlay « test de charge lecture » (perf)
+#
+# Utilisé uniquement par .github/workflows/perf-read.yml :
+#   docker compose -f docker-compose.yml -f docker-compose.perf.yml ...
+#
+# Différences avec la stack locale :
+#   * gateway-perf : image construite depuis gateway/Dockerfile, donc config
+#     « cloud » (nginx.conf.template) SANS rate-limit par IP. On mesure la
+#     capacité applicative réelle, pas le limiteur anti-abus du gateway local.
+#   * le frontend n'est pas lancé (inutile pour un test d'API, et son build
+#     consommerait du CPU pendant la mesure).
+# =============================================================
+
+services:
+  gateway-perf:
+    build: ./gateway
+    restart: unless-stopped
+    ports:
+      - "${PERF_GATEWAY_PORT:-8081}:80"
+    environment:
+      # Le template résout tous les upstreams au démarrage : chaque nom doit
+      # exister. Le frontend n'étant pas lancé, sa route pointe vers posts
+      # (elle n'est pas testée par le scénario de charge).
+      FRONTEND_UPSTREAM: posts:4003
+    depends_on:
+      auth:
+        condition: service_healthy
+      users:
+        condition: service_healthy
+      posts:
+        condition: service_healthy
+      notifications:
+        condition: service_healthy
+      conversations:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost/healthz || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    networks: [breezy-net]
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.5'

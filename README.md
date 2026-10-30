@@ -136,6 +136,7 @@ Matrice de permissions complète : section 6 des spécifications.
 │   ├── posts/                  # posts, commentaires, likes, signalements (MongoDB)
 │   └── notifications/          # notifications (MongoDB)
 ├── frontend/                   # application Next.js
+├── perf/                       # test de charge lecture (k6 + rapport)
 ├── azure/                      # provisioning Azure Container Apps (provision.sh)
 ├── docs/                       # spécifications, API, architecture, déploiement
 └── .github/                    # CI + CD (Actions) + Dependabot
@@ -153,8 +154,46 @@ Matrice de permissions complète : section 6 des spécifications.
   ```
 - **CD** (`.github/workflows/release.yml`, **manuel**) : build et push des images sur
   **Docker Hub**, puis (option `deploy`) déploiement sur **Azure Container Apps**.
+- **Perf** (`.github/workflows/perf-read.yml`, manuel ou chaque lundi à 3 h UTC) : test de
+  charge en lecture sur runner gratuit, pour connaître le nombre d'utilisateurs simultanés
+  (détail ci-dessous).
 
 📄 Guide de déploiement complet : [`docs/DEPLOIEMENT-AZURE.md`](docs/DEPLOIEMENT-AZURE.md).
+
+### ⚡ Test de charge — lecture des données (utilisateurs simultanés)
+
+`.github/workflows/perf-read.yml` mesure **combien d'utilisateurs peuvent lire les données en
+même temps** en n'utilisant que les ressources gratuites de GitHub Actions (runner
+`ubuntu-latest` : 4 vCPU, 16 Go). Aucun service externe, aucun secret : la stack complète
+(PostgreSQL, MongoDB, microservices, gateway) est construite et démarrée dans le job, puis
+peuplée avec les données de démonstration (~1000 utilisateurs, ~6000 posts).
+
+Le générateur de charge est [k6](https://k6.io). Chaque utilisateur virtuel enchaîne des
+lectures réalistes — 35 % flux public (`explore`), 25 % fil d'abonnements (`feed`), 8 %
+tendances, 15 % profil, 10 % posts d'un auteur, 7 % détail d'un post — avec un temps de
+réflexion de 0,5 à 1,5 s entre deux actions.
+
+**Lancement** : onglet *Actions* → *Perf — lecture des données* → *Run workflow* (les paliers
+et la durée de chaque palier sont modifiables). Un run automatique a lieu chaque lundi à 3 h UTC.
+
+```bash
+# En local, une fois la stack perf démarrée et seedée (commandes du workflow) :
+mkdir -p perf/results
+k6 run -e BASE_URL=http://localhost:8081 -e VUS=50 -e DURATION=45s \
+  -e LEVEL=50 -e RESULT_DIR=perf/results perf/k6/read-load.js
+node perf/report.mjs
+```
+
+**Résultat** : un tableau par palier (requêtes/s, p50, p95, p99, taux d'erreur) publié dans le
+résumé du run et conservé dans l'artefact `perf-lecture-<run_id>`. La **capacité retenue** est
+le plus grand palier qui respecte p95 ≤ 500 ms et ≤ 1 % d'erreurs.
+
+Deux précisions de lecture :
+
+- le test passe par `gateway-perf`, l'image du gateway avec la configuration cloud **sans
+  rate-limit par IP** : on mesure la capacité applicative, pas le limiteur anti-abus ;
+- k6 tourne sur le même runner que la stack, qui partage 4 vCPU. Les chiffres décrivent cette
+  machine gratuite, pas une infrastructure de production.
 
 ---
 

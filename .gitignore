@@ -44,3 +44,7 @@ Thumbs.db
 
 # Outil local d'assistance au développement (mémoire et configuration locale)
 .claude/
+
+# Test de charge lecture (perf) — résultats et jetons générés
+perf/results/
+perf/tokens.json
